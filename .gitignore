@@ -1,0 +1,13 @@
+# Backend
+backend/vendor/
+backend/.env.local
+backend/var/
+backend/repos_clones/     ← les repos Git clonés temporairement
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+
+# Divers
+.DS_Store
+*.log
