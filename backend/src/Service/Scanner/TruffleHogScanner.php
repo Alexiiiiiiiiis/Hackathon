@@ -14,7 +14,8 @@ class TruffleHogScanner implements ScannerInterface
 
     public function isAvailable(): bool
     {
-        exec('which trufflehog 2>/dev/null', $o, $c);
+        $cmd = PHP_OS_FAMILY === 'Windows' ? 'where trufflehog 2>nul' : 'which trufflehog 2>/dev/null';
+        exec($cmd, $o, $c);
         return $c === 0;
     }
 

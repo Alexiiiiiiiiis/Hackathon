@@ -27,7 +27,8 @@ class EslintScanner implements ScannerInterface
 
     public function isAvailable(): bool
     {
-        exec('which eslint 2>/dev/null', $o, $c);
+        $cmd = PHP_OS_FAMILY === 'Windows' ? 'where eslint 2>nul' : 'which eslint 2>/dev/null';
+        exec($cmd, $o, $c);
         return $c === 0;
     }
 

@@ -44,14 +44,16 @@ class SemgrepScanner implements ScannerInterface
 
     public function isAvailable(): bool
     {
-        exec('which semgrep 2>/dev/null', $o, $c);
+        $cmd = PHP_OS_FAMILY === 'Windows' ? 'where semgrep 2>nul' : 'which semgrep 2>/dev/null';
+        exec($cmd, $o, $c);
         return $c === 0;
     }
 
     public function scan(string $projectPath): array
     {
+        $null = PHP_OS_FAMILY === 'Windows' ? 'nul' : '/dev/null';
         exec(
-            sprintf('semgrep --config=auto --json --quiet %s 2>/dev/null', escapeshellarg($projectPath)),
+            sprintf('semgrep --config=auto --json --quiet %s 2>%s', escapeshellarg($projectPath), $null),
             $out, $code
         );
         if ($code > 1) { $this->logger->error('Semgrep error', ['code' => $code]); return []; }
