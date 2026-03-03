@@ -37,7 +37,13 @@ class FixController extends AbstractController
     public function apply(int $id): JsonResponse
     {
         $fix = $this->fixRepo->find($id);
-        if (!$fix) return $this->json(['error' => 'Fix introuvable'], Response::HTTP_NOT_FOUND);
+        if (!$fix) {
+            $vuln = $this->vulnRepo->find($id);
+            if (!$vuln) {
+                return $this->json(['error' => 'Fix ou vulnerabilite introuvable'], Response::HTTP_NOT_FOUND);
+            }
+            $fix = $this->fixService->generateFix($vuln);
+        }
         try {
             $this->fixService->applyFix($fix);
         } catch (\RuntimeException $e) {
@@ -50,7 +56,13 @@ class FixController extends AbstractController
     public function reject(int $id): JsonResponse
     {
         $fix = $this->fixRepo->find($id);
-        if (!$fix) return $this->json(['error' => 'Fix introuvable'], Response::HTTP_NOT_FOUND);
+        if (!$fix) {
+            $vuln = $this->vulnRepo->find($id);
+            if (!$vuln || !$vuln->getFix()) {
+                return $this->json(['error' => 'Fix ou vulnerabilite introuvable'], Response::HTTP_NOT_FOUND);
+            }
+            $fix = $vuln->getFix();
+        }
         $this->fixService->rejectFix($fix);
         return $this->json(['id' => $fix->getId(), 'status' => $fix->getStatus()]);
     }

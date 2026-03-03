@@ -3,7 +3,7 @@
 namespace App\Controller;
 
 use App\Entity\Project;
-use App\Entity\Vulnerability;
+use App\Entity\ScanResult;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
@@ -20,46 +20,55 @@ class ReportController extends AbstractController
             return new Response('<h1>Projet introuvable</h1>', 404, ['Content-Type' => 'text/html; charset=UTF-8']);
         }
 
-        $vulnerabilities = $em->getRepository(Vulnerability::class)->findBy(['project' => $project]);
+        /** @var ScanResult[] $scans */
+        $scans = $project->getScanResults()->toArray();
+        usort($scans, static fn(ScanResult $a, ScanResult $b): int => $b->getStartedAt() <=> $a->getStartedAt());
+        $latestScan = $scans[0] ?? null;
+        $vulnerabilities = $latestScan ? $latestScan->getVulnerabilities()->toArray() : [];
 
         $bySeverity = ['critical' => 0, 'high' => 0, 'medium' => 0, 'low' => 0, 'info' => 0, 'unknown' => 0];
         $byOwasp = [];
 
         foreach ($vulnerabilities as $vuln) {
-            $severity = strtolower((string) $vuln->getSeverity());
+            $severity = strtolower($vuln->getSeverity()->value);
             if (!isset($bySeverity[$severity])) {
                 $severity = 'unknown';
             }
             $bySeverity[$severity]++;
 
-            $owasp = $vuln->getOwaspCategory() ?: 'Inconnu';
+            $owasp = $vuln->getOwaspCategory()->value ?: 'Inconnu';
             $byOwasp[$owasp] = ($byOwasp[$owasp] ?? 0) + 1;
         }
 
         ksort($byOwasp);
 
-        $html = $this->renderReportHtml($project, $vulnerabilities, $bySeverity, $byOwasp);
+        $html = $this->renderReportHtml($project, $latestScan, $vulnerabilities, $bySeverity, $byOwasp);
 
         return new Response($html, 200, ['Content-Type' => 'text/html; charset=UTF-8']);
     }
 
     /**
-     * @param Vulnerability[] $vulnerabilities
+     * @param array<int, object> $vulnerabilities
      * @param array<string, int> $bySeverity
      * @param array<string, int> $byOwasp
      */
-    private function renderReportHtml(Project $project, array $vulnerabilities, array $bySeverity, array $byOwasp): string
-    {
+    private function renderReportHtml(
+        Project $project,
+        ?ScanResult $latestScan,
+        array $vulnerabilities,
+        array $bySeverity,
+        array $byOwasp
+    ): string {
         $rows = '';
         foreach ($vulnerabilities as $vuln) {
             $rows .= sprintf(
                 '<tr><td>%s</td><td>%s</td><td>%s</td><td>%s:%s</td><td>%s</td></tr>',
                 htmlspecialchars((string) $vuln->getId(), ENT_QUOTES, 'UTF-8'),
-                htmlspecialchars((string) $vuln->getTool(), ENT_QUOTES, 'UTF-8'),
-                htmlspecialchars((string) $vuln->getSeverity(), ENT_QUOTES, 'UTF-8'),
-                htmlspecialchars((string) $vuln->getFile(), ENT_QUOTES, 'UTF-8'),
+                htmlspecialchars((string) $vuln->getToolSource(), ENT_QUOTES, 'UTF-8'),
+                htmlspecialchars((string) $vuln->getSeverity()->value, ENT_QUOTES, 'UTF-8'),
+                htmlspecialchars((string) $vuln->getFilePath(), ENT_QUOTES, 'UTF-8'),
                 htmlspecialchars((string) ($vuln->getLine() ?? '-'), ENT_QUOTES, 'UTF-8'),
-                htmlspecialchars((string) $vuln->getDescription(), ENT_QUOTES, 'UTF-8')
+                htmlspecialchars((string) $vuln->getMessage(), ENT_QUOTES, 'UTF-8')
             );
         }
 
@@ -91,7 +100,7 @@ class ReportController extends AbstractController
 
         return sprintf(
             '<!doctype html>
-<html lang="en">
+<html lang="fr">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -111,6 +120,7 @@ class ReportController extends AbstractController
   <h1>Rapport de securite SecureScan</h1>
   <div class="meta">
     <div><strong>ID Projet :</strong> %d</div>
+    <div><strong>ID Scan :</strong> %s</div>
     <div><strong>URL Git :</strong> %s</div>
     <div><strong>Langage :</strong> %s</div>
     <div><strong>Statut :</strong> %s</div>
@@ -146,9 +156,10 @@ class ReportController extends AbstractController
 </html>',
             $project->getId(),
             $project->getId(),
-            htmlspecialchars((string) $project->getGitUrl(), ENT_QUOTES, 'UTF-8'),
-            htmlspecialchars((string) ($project->getLanguage() ?? 'inconnu'), ENT_QUOTES, 'UTF-8'),
-            htmlspecialchars((string) $project->getStatus(), ENT_QUOTES, 'UTF-8'),
+            htmlspecialchars((string) ($latestScan?->getId() ?? '-'), ENT_QUOTES, 'UTF-8'),
+            htmlspecialchars((string) $project->getSource(), ENT_QUOTES, 'UTF-8'),
+            htmlspecialchars((string) ($project->getDetectedLanguage() ?? 'inconnu'), ENT_QUOTES, 'UTF-8'),
+            htmlspecialchars((string) ($latestScan?->getStatus() ?? 'aucun scan'), ENT_QUOTES, 'UTF-8'),
             htmlspecialchars((new \DateTimeImmutable())->format('c'), ENT_QUOTES, 'UTF-8'),
             count($vulnerabilities),
             $severityItems,

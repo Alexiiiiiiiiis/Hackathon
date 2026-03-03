@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Entity;
 
 use App\Repository\ProjectRepository;
@@ -8,69 +7,59 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: ProjectRepository::class)]
+#[ORM\Table(name: 'project')]
 class Project
 {
-    public const STATUS_PENDING = 'pending';
-    public const STATUS_CLONING = 'cloning';
-    public const STATUS_SCANNING = 'scanning';
-    public const STATUS_SCANNED = 'scanned';
-    public const STATUS_ERROR = 'error';
-
-    private const ALLOWED_STATUSES = [
-        self::STATUS_PENDING,
-        self::STATUS_CLONING,
-        self::STATUS_SCANNING,
-        self::STATUS_SCANNED,
-        self::STATUS_ERROR,
-    ];
-
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
     private ?int $id = null;
 
-    #[ORM\Column(length: 500)]
-    private ?string $gitUrl = null;
+    #[ORM\Column(length: 255)]
+    private string $name;
 
-    #[ORM\Column(length: 100, nullable: true)]
-    private ?string $language = null;
+    #[ORM\Column(length: 512)]
+    private string $source;
 
-    #[ORM\Column(length: 50)]
-    private string $status = self::STATUS_PENDING;
+    #[ORM\Column(length: 20)]
+    private string $sourceType;
+
+    #[ORM\Column(length: 512, nullable: true)]
+    private ?string $localPath = null;
+
+    #[ORM\Column(length: 50, nullable: true)]
+    private ?string $detectedLanguage = null;
 
     #[ORM\Column]
-    private ?\DateTimeImmutable $createdAt = null;
+    private \DateTimeImmutable $createdAt;
 
-    #[ORM\OneToMany(mappedBy: 'project', targetEntity: Vulnerability::class, cascade: ['remove'])]
-    private Collection $vulnerabilities;
-
-    #[ORM\OneToMany(mappedBy: 'project', targetEntity: ScanResult::class, cascade: ['remove'])]
+    #[ORM\OneToMany(targetEntity: ScanResult::class, mappedBy: 'project', cascade: ['persist', 'remove'])]
     private Collection $scanResults;
 
     public function __construct()
     {
-        $this->createdAt = new \DateTimeImmutable();
-        $this->vulnerabilities = new ArrayCollection();
+        $this->createdAt   = new \DateTimeImmutable();
         $this->scanResults = new ArrayCollection();
     }
 
     public function getId(): ?int { return $this->id; }
-    public function getGitUrl(): ?string { return $this->gitUrl; }
-    public function setGitUrl(string $gitUrl): static { $this->gitUrl = $gitUrl; return $this; }
-    public function getLanguage(): ?string { return $this->language; }
-    public function setLanguage(?string $language): static { $this->language = $language; return $this; }
-    public function getStatus(): string { return $this->status; }
-    public function setStatus(string $status): static
-    {
-        if (!in_array($status, self::ALLOWED_STATUSES, true)) {
-            throw new \InvalidArgumentException(sprintf('Invalid project status: %s', $status));
-        }
 
-        $this->status = $status;
+    public function getName(): string { return $this->name; }
+    public function setName(string $n): self { $this->name = $n; return $this; }
 
-        return $this;
-    }
-    public function getCreatedAt(): ?\DateTimeImmutable { return $this->createdAt; }
-    public function getVulnerabilities(): Collection { return $this->vulnerabilities; }
+    public function getSource(): string { return $this->source; }
+    public function setSource(string $s): self { $this->source = $s; return $this; }
+
+    public function getSourceType(): string { return $this->sourceType; }
+    public function setSourceType(string $t): self { $this->sourceType = $t; return $this; }
+
+    public function getLocalPath(): ?string { return $this->localPath; }
+    public function setLocalPath(?string $p): self { $this->localPath = $p; return $this; }
+
+    public function getDetectedLanguage(): ?string { return $this->detectedLanguage; }
+    public function setDetectedLanguage(?string $l): self { $this->detectedLanguage = $l; return $this; }
+
+    public function getCreatedAt(): \DateTimeImmutable { return $this->createdAt; }
+
     public function getScanResults(): Collection { return $this->scanResults; }
 }
