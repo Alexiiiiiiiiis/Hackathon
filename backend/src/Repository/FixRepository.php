@@ -22,4 +22,14 @@ class FixRepository extends ServiceEntityRepository
             ->getQuery()
             ->getResult();
     }
+
+    public function countPendingFixes(): int
+    {
+        return (int) $this->createQueryBuilder('f')
+            ->select('COUNT(f.id)')
+            ->where('f.status = :status')
+            ->setParameter('status', 'pending')
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
 }
