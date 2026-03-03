@@ -1,377 +1,295 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>frontend</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
-</html>
 <!DOCTYPE html>
 <html lang="fr">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SecureScan – Connexion</title>
-  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <title>SecureScan</title>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet" />
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --bg-deep:    #0b1229;
-      --bg-mid:     #0f1a3a;
-      --bg-card:    #152040;
-      --border:     rgba(255,255,255,0.08);
-      --input-bg:   rgba(255,255,255,0.05);
-      --input-border: rgba(255,255,255,0.12);
-      --input-focus: #3b82f6;
-      --text-primary: #e8edf8;
-      --text-muted:   #7a8fb5;
-      --text-placeholder: #4a5e80;
-      --accent-start: #3b82f6;
-      --accent-end:   #06b6d4;
-      --link:  #38bdf8;
-      --check-border: rgba(255,255,255,0.18);
+      --bg-deep:     #09111f;
+      --bg-mid:      #0d1a32;
+      --border:      rgba(255,255,255,0.07);
+      --text-primary: #ddeaf8;
+      --text-muted:   #6a82a8;
+      --accent-blue:  #22d3ee;
+      --accent-pink:  #e879a0;
+      --accent-orange:#f59e6a;
+      --btn-bg:       #22d3ee;
+      --btn-text:     #05111f;
     }
 
-    body {
+    html, body {
+      height: 100%;
       font-family: 'Sora', sans-serif;
-      background: radial-gradient(ellipse 80% 60% at 50% 0%, #1a2d5a 0%, var(--bg-deep) 70%);
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      overflow: hidden;
+      background: var(--bg-deep);
+      color: var(--text-primary);
+      overflow-x: hidden;
+    }
+
+    /* ── Background ── */
+    body {
+      background:
+        radial-gradient(ellipse 70% 50% at 50% -10%, #0f2a55 0%, transparent 70%),
+        var(--bg-deep);
       position: relative;
     }
 
-    /* Subtle grid overlay */
     body::before {
       content: '';
-      position: fixed;
-      inset: 0;
+      position: fixed; inset: 0;
       background-image:
-        linear-gradient(rgba(59,130,246,0.04) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(59,130,246,0.04) 1px, transparent 1px);
-      background-size: 40px 40px;
+        linear-gradient(rgba(34,211,238,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(34,211,238,0.03) 1px, transparent 1px);
+      background-size: 48px 48px;
       pointer-events: none;
+      z-index: 0;
     }
 
-    /* Ambient glow blobs */
     .blob {
-      position: fixed;
-      border-radius: 50%;
-      filter: blur(80px);
-      opacity: 0.18;
-      pointer-events: none;
-      animation: drift 12s ease-in-out infinite alternate;
+      position: fixed; border-radius: 50%;
+      filter: blur(100px); opacity: 0.12; pointer-events: none; z-index: 0;
     }
-    .blob-1 { width: 480px; height: 480px; background: #2563eb; top: -120px; left: -100px; animation-delay: 0s; }
-    .blob-2 { width: 360px; height: 360px; background: #0ea5e9; bottom: -80px; right: -80px; animation-delay: -6s; }
-    .blob-3 { width: 260px; height: 260px; background: #6366f1; top: 40%; right: 15%; animation-delay: -3s; }
+    .blob-1 { width: 500px; height: 500px; background: #1d4ed8; top: -150px; left: -100px; }
+    .blob-2 { width: 350px; height: 350px; background: #0891b2; bottom: -100px; right: -80px; }
 
-    @keyframes drift {
-      from { transform: translate(0, 0) scale(1); }
-      to   { transform: translate(30px, 20px) scale(1.06); }
+    /* ── Navbar ── */
+    nav {
+      position: relative; z-index: 10;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 18px 36px;
     }
 
-    /* Card */
-    .card {
-      position: relative;
-      z-index: 10;
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: 18px;
-      padding: 40px 36px 36px;
-      width: 100%;
-      max-width: 380px;
-      backdrop-filter: blur(20px);
-      box-shadow:
-        0 0 0 1px rgba(255,255,255,0.04),
-        0 24px 64px rgba(0,0,0,0.5),
-        0 4px 16px rgba(0,0,0,0.3);
-      animation: fadeUp 0.6s cubic-bezier(0.16,1,0.3,1) both;
+    .nav-brand {
+      display: flex; align-items: center; gap: 9px;
+      font-size: 1rem; font-weight: 600; color: var(--text-primary);
+      text-decoration: none;
+    }
+
+    .nav-brand .shield-icon {
+      width: 22px; height: 22px;
+    }
+
+    .nav-brand .shield-icon path {
+      fill: none;
+      stroke: var(--accent-blue);
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .btn-connexion {
+      padding: 8px 22px;
+      background: transparent;
+      border: 2px solid var(--accent-blue);
+      border-radius: 8px;
+      color: var(--accent-blue);
+      font-family: 'Sora', sans-serif;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background 0.2s, color 0.2s;
+    }
+    .btn-connexion:hover {
+      background: var(--accent-blue);
+      color: var(--btn-text);
+    }
+
+    /* ── Hero ── */
+    .hero {
+      position: relative; z-index: 10;
+      text-align: center;
+      padding: 72px 24px 56px;
+      animation: fadeUp 0.7s cubic-bezier(0.16,1,0.3,1) both;
     }
 
     @keyframes fadeUp {
-      from { opacity: 0; transform: translateY(24px); }
+      from { opacity: 0; transform: translateY(28px); }
       to   { opacity: 1; transform: translateY(0); }
     }
 
-    /* Logo / Brand */
-    .brand {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-      margin-bottom: 28px;
-    }
-
-    .brand-icon {
-      width: 30px;
-      height: 30px;
-      border-radius: 50%;
-      border: 2px solid var(--accent-start);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      box-shadow: 0 0 12px rgba(59,130,246,0.4);
-      background: rgba(59,130,246,0.1);
-    }
-
-    .brand-icon svg {
-      width: 16px;
-      height: 16px;
-      stroke: var(--accent-start);
-      fill: rgba(59,130,246,0.18);
-    }
-
-    .brand-name {
-      font-size: 1.1rem;
-      font-weight: 600;
-      color: var(--text-primary);
+    .hero h1 {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: clamp(1.8rem, 5vw, 2.8rem);
+      font-weight: 400;
+      color: var(--accent-blue);
       letter-spacing: 0.01em;
-    }
-
-    /* Title */
-    .card-title {
-      text-align: center;
-      font-size: 1rem;
-      font-weight: 500;
-      color: var(--text-primary);
+      line-height: 1.2;
       margin-bottom: 24px;
     }
 
-    /* Form groups */
-    .form-group {
-      margin-bottom: 16px;
-    }
-
-    label {
-      display: block;
-      font-size: 0.78rem;
-      font-weight: 500;
-      color: var(--text-muted);
-      margin-bottom: 7px;
-      letter-spacing: 0.02em;
-    }
-
-    .input-wrap {
-      position: relative;
-      display: flex;
-      align-items: center;
-    }
-
-    .input-icon {
-      position: absolute;
-      left: 13px;
-      display: flex;
-      align-items: center;
-      pointer-events: none;
-      opacity: 0.45;
-    }
-
-    .input-icon svg {
-      width: 15px;
-      height: 15px;
-      stroke: var(--text-primary);
-    }
-
-    input[type="email"],
-    input[type="password"] {
-      width: 100%;
-      padding: 10px 14px 10px 38px;
-      background: var(--input-bg);
-      border: 1px solid var(--input-border);
-      border-radius: 9px;
+    .hero p {
+      max-width: 600px;
+      margin: 0 auto 40px;
+      font-size: 0.92rem;
+      line-height: 1.75;
       color: var(--text-primary);
-      font-family: 'Sora', sans-serif;
-      font-size: 0.82rem;
-      outline: none;
-      transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+      opacity: 0.85;
     }
 
-    input::placeholder { color: var(--text-placeholder); }
-
-    input:focus {
-      border-color: var(--input-focus);
-      background: rgba(59,130,246,0.07);
-      box-shadow: 0 0 0 3px rgba(59,130,246,0.15);
-    }
-
-    /* Remember / Forgot row */
-    .row-aux {
-      display: flex;
+    .btn-start {
+      display: inline-flex;
       align-items: center;
-      justify-content: space-between;
-      margin: 14px 0 22px;
-    }
-
-    .remember {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      cursor: pointer;
-      user-select: none;
-    }
-
-    .remember input[type="checkbox"] {
-      appearance: none;
-      width: 15px;
-      height: 15px;
-      border: 1px solid var(--check-border);
-      border-radius: 4px;
-      background: var(--input-bg);
-      cursor: pointer;
-      position: relative;
-      flex-shrink: 0;
-      transition: background 0.2s, border-color 0.2s;
-      padding: 0;
-    }
-
-    .remember input[type="checkbox"]:checked {
-      background: var(--accent-start);
-      border-color: var(--accent-start);
-    }
-
-    .remember input[type="checkbox"]:checked::after {
-      content: '';
-      position: absolute;
-      top: 2px; left: 4px;
-      width: 5px; height: 8px;
-      border: 2px solid #fff;
-      border-top: none;
-      border-left: none;
-      transform: rotate(45deg);
-    }
-
-    .remember span {
-      font-size: 0.75rem;
-      color: var(--text-muted);
-    }
-
-    .forgot {
-      font-size: 0.75rem;
-      color: var(--link);
-      text-decoration: none;
-      transition: opacity 0.2s;
-    }
-    .forgot:hover { opacity: 0.75; }
-
-    /* Submit button */
-    .btn-login {
-      width: 100%;
-      padding: 11px;
-      background: linear-gradient(90deg, var(--accent-start), var(--accent-end));
+      gap: 10px;
+      padding: 14px 36px;
+      background: var(--accent-blue);
       border: none;
-      border-radius: 9px;
-      color: #fff;
+      border-radius: 10px;
+      color: var(--btn-text);
       font-family: 'Sora', sans-serif;
-      font-size: 0.88rem;
-      font-weight: 600;
-      letter-spacing: 0.03em;
+      font-size: 1rem;
+      font-weight: 700;
       cursor: pointer;
-      position: relative;
-      overflow: hidden;
+      text-decoration: none;
+      letter-spacing: 0.02em;
       transition: opacity 0.2s, transform 0.15s, box-shadow 0.2s;
-      box-shadow: 0 4px 18px rgba(59,130,246,0.35);
+      box-shadow: 0 4px 24px rgba(34,211,238,0.35);
+    }
+    .btn-start:hover {
+      opacity: 0.9;
+      transform: translateY(-2px);
+      box-shadow: 0 8px 32px rgba(34,211,238,0.45);
+    }
+    .btn-start .arrow {
+      font-size: 1.1rem;
+      transition: transform 0.2s;
+    }
+    .btn-start:hover .arrow { transform: translateX(4px); }
+
+    /* ── Cards ── */
+    .cards {
+      position: relative; z-index: 10;
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      padding: 0 32px 60px;
+      flex-wrap: wrap;
+      animation: fadeUp 0.8s 0.15s cubic-bezier(0.16,1,0.3,1) both;
     }
 
-    .btn-login::after {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background: linear-gradient(90deg, rgba(255,255,255,0.1), transparent);
-      opacity: 0;
-      transition: opacity 0.2s;
+    .card {
+      background: rgba(255,255,255,0.035);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 28px 24px 24px;
+      width: 220px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      transition: border-color 0.2s, transform 0.2s, background 0.2s;
+    }
+    .card:hover {
+      border-color: rgba(255,255,255,0.15);
+      background: rgba(255,255,255,0.055);
+      transform: translateY(-4px);
     }
 
-    .btn-login:hover { opacity: 0.92; transform: translateY(-1px); box-shadow: 0 6px 24px rgba(59,130,246,0.45); }
-    .btn-login:hover::after { opacity: 1; }
-    .btn-login:active { transform: translateY(0); }
+    .card-icon {
+      width: 40px; height: 40px;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto;
+    }
+    .card-icon svg {
+      width: 36px; height: 36px;
+    }
 
-    /* Register link */
-    .register {
+    /* Icon colors */
+    .icon-blue   { stroke: var(--accent-blue); }
+    .icon-pink   { stroke: var(--accent-pink); }
+    .icon-orange { stroke: var(--accent-orange); }
+
+    .card-title {
       text-align: center;
-      margin-top: 18px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .card-desc {
+      text-align: center;
       font-size: 0.75rem;
+      line-height: 1.6;
       color: var(--text-muted);
     }
-
-    .register a {
-      color: var(--link);
-      text-decoration: none;
-      font-weight: 600;
-      transition: opacity 0.2s;
-    }
-    .register a:hover { opacity: 0.75; }
   </style>
 </head>
 <body>
 
   <div class="blob blob-1"></div>
   <div class="blob blob-2"></div>
-  <div class="blob blob-3"></div>
 
-  <div class="card">
+  <!-- Navbar -->
+  <nav>
+    <a href="#" class="nav-brand">
+      <svg class="shield-icon" viewBox="0 0 24 24">
+        <path d="M12 2L4 6v6c0 5.25 3.5 10.15 8 11.5C16.5 22.15 20 17.25 20 12V6L12 2z"/>
+      </svg>
+      SecureScan
+    </a>
+    <a href="login.html" class="btn-connexion">Connexion</a>
+  </nav>
 
-    <!-- Brand -->
-    <div class="brand">
-      <div class="brand-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Hero -->
+  <section class="hero">
+    <h1>Analyse et Sécurise ton code</h1>
+    <p>
+      Une analyse de sécurité basée sur l'IA qui détecte les vulnérabilités,
+      les mappe au OWASP Top 10, suggère des correctifs automatiques et
+      s'intègre directement à votre environnement Git
+    </p>
+    <a href="#" class="btn-start">
+      Commencer <span class="arrow">›</span>
+    </a>
+  </section>
+
+  <!-- Feature cards -->
+  <section class="cards">
+
+    <!-- Analyse automatisée -->
+    <div class="card">
+      <div class="card-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" class="icon-blue">
+          <path d="M9 3H5a2 2 0 0 0-2 2v4"/>
+          <path d="M15 3h4a2 2 0 0 1 2 2v4"/>
+          <path d="M9 21H5a2 2 0 0 1-2-2v-4"/>
+          <path d="M15 21h4a2 2 0 0 0 2-2v-4"/>
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M12 5v2M12 17v2M5 12H7M17 12h2"/>
+        </svg>
+      </div>
+      <div class="card-title">Analyse automatisée</div>
+      <div class="card-desc">[SAST, analyse des dépendances, détection des secrets et analyse de la qualité du code en un clic]</div>
+    </div>
+
+    <!-- Mapping OWASP -->
+    <div class="card">
+      <div class="card-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" class="icon-pink">
           <path d="M12 2L4 6v6c0 5.25 3.5 10.15 8 11.5C16.5 22.15 20 17.25 20 12V6L12 2z"/>
         </svg>
       </div>
-      <span class="brand-name">SecureScan</span>
+      <div class="card-title">Mapping OWASP</div>
+      <div class="card-desc">Chaque vulnérabilité est associée au OWASP Top 10 2025 pour la conformité et le reporting</div>
     </div>
 
-    <h1 class="card-title">Connexion</h1>
-
-    <div class="form-group">
-      <label for="email">Adresse e-mail</label>
-      <div class="input-wrap">
-        <span class="input-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="2" y="4" width="20" height="16" rx="2"/>
-            <path d="M2 7l10 7 10-7"/>
-          </svg>
-        </span>
-        <input type="email" id="email" placeholder="you@example.com" autocomplete="email" />
+    <!-- Intégration Git -->
+    <div class="card">
+      <div class="card-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" class="icon-orange">
+          <rect x="5" y="2" width="14" height="20" rx="2"/>
+          <path d="M9 7h6M9 11h6M9 15h4"/>
+          <circle cx="16" cy="19" r="3" fill="none"/>
+          <path d="M16 18v2M15 19h2"/>
+        </svg>
       </div>
+      <div class="card-title">Intégration Git</div>
+      <div class="card-desc">Correctifs automatiques envoyés directement vers votre dépôt avec des messages de commit détaillés</div>
     </div>
 
-    <div class="form-group">
-      <label for="password">Mot de passe</label>
-      <div class="input-wrap">
-        <span class="input-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="3" y="11" width="18" height="11" rx="2"/>
-            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-          </svg>
-        </span>
-        <input type="password" id="password" placeholder="••••••••" autocomplete="current-password" />
-      </div>
-    </div>
-
-    <div class="row-aux">
-      <label class="remember">
-        <input type="checkbox" />
-        <span>Se souvenir de moi</span>
-      </label>
-      <a href="#" class="forgot">Mot de passe oublié ?</a>
-    </div>
-
-    <button class="btn-login">Connexion</button>
-
-    <p class="register">
-      Pas de compte ? <a href="#">Inscris-toi !</a>
-    </p>
-
-  </div>
+  </section>
 
 </body>
 </html>
