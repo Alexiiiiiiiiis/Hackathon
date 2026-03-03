@@ -10,6 +10,7 @@ doctrine:
         # either here or in the DATABASE_URL env var (see .env file)
         #server_version: '16'
 
+        server_version: '17'
         profiling_collect_backtrace: '%kernel.debug%'
         use_savepoints: true
     orm:

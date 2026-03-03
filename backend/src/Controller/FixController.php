@@ -1,79 +1,57 @@
 <?php
-
 namespace App\Controller;
 
-use App\Entity\Fix;
-use App\Entity\Vulnerability;
-use Doctrine\ORM\EntityManagerInterface;
+use App\Repository\FixRepository;
+use App\Repository\VulnerabilityRepository;
+use App\Service\FixService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 
-#[Route('/api/fix')]
+#[Route('/api/fix', name: 'api_fix_')]
 class FixController extends AbstractController
 {
-    #[Route('/{vulnId}/apply', methods: ['POST'])]
-    public function apply(int $vulnId, EntityManagerInterface $em): JsonResponse
+    public function __construct(
+        private readonly FixService              $fixService,
+        private readonly VulnerabilityRepository $vulnRepo,
+        private readonly FixRepository           $fixRepo,
+    ) {}
+
+    #[Route('/generate/{vulnId}', name: 'generate', methods: ['POST'])]
+    public function generate(int $vulnId): JsonResponse
     {
-        $vuln = $em->getRepository(Vulnerability::class)->find($vulnId);
-
-        if (!$vuln) {
-            return $this->errorResponse('Vulnerabilite introuvable', 404, 'vulnerability_not_found');
-        }
-
-        $fix = $em->getRepository(Fix::class)->findOneBy(['vulnerability' => $vuln]);
-
-        if (!$fix) {
-            return $this->errorResponse('Aucun correctif disponible pour cette vulnerabilite', 404, 'fix_not_found');
-        }
-
-        if ($fix->getStatus() !== Fix::STATUS_PROPOSED) {
-            return $this->errorResponse('Le correctif ne peut pas etre applique dans son etat actuel', 409, 'fix_invalid_state');
-        }
-
-        $fix->setStatus(Fix::STATUS_APPLIED);
-        $vuln->setFixStatus(Vulnerability::FIX_STATUS_FIXED);
-        $em->flush();
-
+        $vuln = $this->vulnRepo->find($vulnId);
+        if (!$vuln) return $this->json(['error' => 'Vulnérabilité introuvable'], Response::HTTP_NOT_FOUND);
+        $fix = $this->fixService->generateFix($vuln);
         return $this->json([
-            'message'   => 'Correctif applique',
-            'vulnId'    => $vulnId,
-            'fixStatus' => $fix->getStatus(),
-        ]);
+            'id'           => $fix->getId(),
+            'originalCode' => $fix->getOriginalCode(),
+            'fixedCode'    => $fix->getFixedCode(),
+            'explanation'  => $fix->getExplanation(),
+            'status'       => $fix->getStatus(),
+        ], Response::HTTP_CREATED);
     }
 
-    #[Route('/{vulnId}/reject', methods: ['POST'])]
-    public function reject(int $vulnId, EntityManagerInterface $em): JsonResponse
+    #[Route('/{id}/apply', name: 'apply', methods: ['POST'])]
+    public function apply(int $id): JsonResponse
     {
-        $vuln = $em->getRepository(Vulnerability::class)->find($vulnId);
-
-        if (!$vuln) {
-            return $this->errorResponse('Vulnerabilite introuvable', 404, 'vulnerability_not_found');
+        $fix = $this->fixRepo->find($id);
+        if (!$fix) return $this->json(['error' => 'Fix introuvable'], Response::HTTP_NOT_FOUND);
+        try {
+            $this->fixService->applyFix($fix);
+        } catch (\RuntimeException $e) {
+            return $this->json(['error' => $e->getMessage()], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
-
-        $fix = $em->getRepository(Fix::class)->findOneBy(['vulnerability' => $vuln]);
-
-        if (!$fix) {
-            return $this->errorResponse('Aucun correctif disponible', 404, 'fix_not_found');
-        }
-
-        if ($fix->getStatus() !== Fix::STATUS_PROPOSED) {
-            return $this->errorResponse('Le correctif ne peut pas etre rejete dans son etat actuel', 409, 'fix_invalid_state');
-        }
-
-        $fix->setStatus(Fix::STATUS_REJECTED);
-        $vuln->setFixStatus(Vulnerability::FIX_STATUS_REJECTED);
-        $em->flush();
-
-        return $this->json([
-            'message'   => 'Correctif rejete',
-            'vulnId'    => $vulnId,
-            'fixStatus' => $fix->getStatus(),
-        ]);
+        return $this->json(['id' => $fix->getId(), 'status' => $fix->getStatus()]);
     }
 
-    private function errorResponse(string $message, int $status, string $code): JsonResponse
+    #[Route('/{id}/reject', name: 'reject', methods: ['POST'])]
+    public function reject(int $id): JsonResponse
     {
-        return $this->json(['error' => $message, 'code' => $code], $status);
+        $fix = $this->fixRepo->find($id);
+        if (!$fix) return $this->json(['error' => 'Fix introuvable'], Response::HTTP_NOT_FOUND);
+        $this->fixService->rejectFix($fix);
+        return $this->json(['id' => $fix->getId(), 'status' => $fix->getStatus()]);
     }
 }

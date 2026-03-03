@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Repository;
 
 use App\Entity\Project;
@@ -12,5 +11,14 @@ class ProjectRepository extends ServiceEntityRepository
     {
         parent::__construct($registry, Project::class);
     }
-}
 
+    public function findAllWithLastScan(): array
+    {
+        return $this->createQueryBuilder('p')
+            ->leftJoin('p.scanResults', 's')
+            ->addSelect('s')
+            ->orderBy('p.createdAt', 'DESC')
+            ->getQuery()
+            ->getResult();
+    }
+}

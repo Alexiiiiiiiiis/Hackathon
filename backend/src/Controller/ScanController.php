@@ -1,107 +1,109 @@
 <?php
-
 namespace App\Controller;
 
 use App\Entity\Project;
-use App\Entity\Vulnerability;
+use App\Repository\ScanResultRepository;
+use App\Service\OWASPMappingService;
+use App\Service\ScanOrchestrator;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Process\Process;
 use Symfony\Component\Routing\Attribute\Route;
-use App\Service\GitCloneService;
 
-#[Route('/api/scan')]
+#[Route('/api/scan', name: 'api_scan_')]
 class ScanController extends AbstractController
 {
-    #[Route('/{id}/launch', methods: ['POST'])]
-    public function launch(int $id, EntityManagerInterface $em, GitCloneService $gitClone): JsonResponse
+    public function __construct(
+        private readonly ScanOrchestrator       $orchestrator,
+        private readonly OWASPMappingService    $owaspMapper,
+        private readonly EntityManagerInterface $em,
+        private readonly ScanResultRepository   $scanResultRepo,
+    ) {}
+
+    #[Route('/project', name: 'submit', methods: ['POST'])]
+    public function submit(Request $request): JsonResponse
     {
-        $project = $em->getRepository(Project::class)->find($id);
+        $data   = json_decode($request->getContent(), true);
+        $gitUrl = $data['gitUrl'] ?? null;
+        if (!$gitUrl) return $this->json(['error' => 'gitUrl requis'], Response::HTTP_BAD_REQUEST);
 
-        if (!$project) {
-            return $this->errorResponse('Projet introuvable', 404, 'project_not_found');
+        $localPath = sys_get_temp_dir() . '/securescan_' . uniqid();
+        $process   = new Process(['git', 'clone', '--depth', '1', $gitUrl, $localPath]);
+        $process->setTimeout(120)->run();
+
+        if (!$process->isSuccessful()) {
+            return $this->json(
+                ['error' => 'Clonage Git échoué', 'detail' => $process->getErrorOutput()],
+                Response::HTTP_BAD_REQUEST
+            );
         }
 
-        if ($project->getStatus() === Project::STATUS_CLONING || $project->getStatus() === Project::STATUS_SCANNING) {
-            return $this->errorResponse('Une analyse est deja en cours pour ce projet', 409, 'scan_in_progress');
-        }
+        $project = (new Project())
+            ->setName($data['name'] ?? 'Projet sans nom')
+            ->setSource($gitUrl)
+            ->setSourceType($data['sourceType'] ?? 'github')
+            ->setLocalPath($localPath)
+            ->setDetectedLanguage($this->detectLanguage($localPath));
 
-        try {
-            $project->setStatus(Project::STATUS_CLONING);
-            $em->flush();
+        $this->em->persist($project);
+        $this->em->flush();
 
-            $repoPath = $gitClone->clone($project->getGitUrl(), $project->getId());
-            $language = $gitClone->detectLanguage($repoPath);
+        $scan = $this->orchestrator->runScan($project);
 
-            $project->setLanguage($language);
-            $project->setStatus(Project::STATUS_SCANNING);
-            $em->flush();
-
-            return $this->json([
-                'message'   => 'Repository clone, analyse prete',
-                'projectId' => $project->getId(),
-                'language'  => $language,
-                'status'    => $project->getStatus(),
-            ]);
-
-        } catch (\Exception $e) {
-            $project->setStatus(Project::STATUS_ERROR);
-            $em->flush();
-
-            return $this->errorResponse('Echec du lancement de l analyse', 500, 'scan_launch_failed');
-        }
+        return $this->json([
+            'scanResultId' => $scan->getId(),
+            'status'       => $scan->getStatus(),
+            'language'     => $project->getDetectedLanguage(),
+            'stats'        => $this->owaspMapper->buildStats($scan),
+        ], Response::HTTP_CREATED);
     }
 
-    #[Route('/{id}/results', methods: ['GET'])]
-    public function results(int $id, EntityManagerInterface $em): JsonResponse
+    #[Route('/{id}', name: 'results', methods: ['GET'])]
+    public function results(int $id): JsonResponse
     {
-        $project = $em->getRepository(Project::class)->find($id);
+        $scan = $this->scanResultRepo->findWithVulnerabilities($id);
+        if (!$scan) return $this->json(['error' => 'Scan introuvable'], Response::HTTP_NOT_FOUND);
 
-        if (!$project) {
-            return $this->errorResponse('Projet introuvable', 404, 'project_not_found');
-        }
-
-        $vulns = $em->getRepository(Vulnerability::class)->findBy(['project' => $project]);
-
-        $data = array_map(fn($v) => [
-            'id'            => $v->getId(),
-            'file'          => $v->getFile(),
-            'line'          => $v->getLine(),
-            'description'   => $v->getDescription(),
-            'severity'      => $v->getSeverity(),
-            'owaspCategory' => $v->getOwaspCategory(),
-            'tool'          => $v->getTool(),
-            'fixStatus'     => $v->getFixStatus(),
-        ], $vulns);
-
-        return $this->json($data);
+        return $this->json([
+            'id'         => $scan->getId(),
+            'status'     => $scan->getStatus(),
+            'startedAt'  => $scan->getStartedAt()->format(\DATE_ATOM),
+            'finishedAt' => $scan->getFinishedAt()?->format(\DATE_ATOM),
+            'stats'      => $this->owaspMapper->buildStats($scan),
+            'vulns'      => array_map(fn($v) => [
+                'id'            => $v->getId(),
+                'toolSource'    => $v->getToolSource(),
+                'ruleId'        => $v->getRuleId(),
+                'message'       => $v->getMessage(),
+                'severity'      => $v->getSeverity()->value,
+                'filePath'      => $v->getFilePath(),
+                'line'          => $v->getLine(),
+                'codeSnippet'   => $v->getCodeSnippet(),
+                'owaspCategory' => $v->getOwaspCategory()->value,
+                'owaspLabel'    => $v->getOwaspCategory()->label(),
+                'suggestedFix'  => $v->getSuggestedFix(),
+                'fixStatus'     => $v->getFixStatus(),
+            ], $scan->getVulnerabilities()->toArray()),
+        ]);
     }
 
-    #[Route('/{id}/owasp', methods: ['GET'])]
-    public function owasp(int $id, EntityManagerInterface $em): JsonResponse
+    private function detectLanguage(string $path): string
     {
-        $project = $em->getRepository(Project::class)->find($id);
-
-        if (!$project) {
-            return $this->errorResponse('Projet introuvable', 404, 'project_not_found');
-        }
-
-        $vulns = $em->getRepository(Vulnerability::class)->findBy(['project' => $project]);
-
-        $mapping = [];
-        foreach ($vulns as $v) {
-            $cat = $v->getOwaspCategory() ?? 'Inconnu';
-            if (!isset($mapping[$cat])) {
-                $mapping[$cat] = 0;
+        $map = [
+            'javascript' => ['package.json'],
+            'php'        => ['composer.json', 'index.php'],
+            'python'     => ['requirements.txt', 'pyproject.toml'],
+            'java'       => ['pom.xml', 'build.gradle'],
+            'ruby'       => ['Gemfile'],
+        ];
+        foreach ($map as $lang => $files) {
+            foreach ($files as $f) {
+                if (file_exists("{$path}/{$f}")) return $lang;
             }
-            $mapping[$cat]++;
         }
-
-        return $this->json($mapping);
-    }
-
-    private function errorResponse(string $message, int $status, string $code): JsonResponse
-    {
-        return $this->json(['error' => $message, 'code' => $code], $status);
+        return 'unknown';
     }
 }
