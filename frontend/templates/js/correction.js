@@ -158,12 +158,10 @@ async function handleFix() {
       }
     });
     if (!res.ok) throw new Error('HTTP ' + res.status);
-    showToast('✅ Correction appliquée avec succès !', '#16a34a');
-    setTimeout(() => { window.location.href = 'dashboard.html'; }, 1500);
+    window.location.href = 'integration-git.html?id=' + getAnalysisId();
   } catch (e) {
     console.warn('[SecureScan] Backend non connecté, simulation.');
-    showToast('✅ Correction appliquée (démo)', '#16a34a');
-    setTimeout(() => { window.location.href = 'dashboard.html'; }, 1500);
+    window.location.href = 'integration-git.html?id=' + getAnalysisId();
   } finally {
     setLoading(false);
   }
