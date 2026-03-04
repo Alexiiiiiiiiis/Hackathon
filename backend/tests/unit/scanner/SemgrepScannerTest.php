@@ -11,16 +11,28 @@ class SemgrepScannerTest extends TestCase
 {
     private SemgrepScanner $scanner;
 
+    /**
+     * Initialise le scanner Semgrep avant chaque test.
+     * Utilise un NullLogger pour éviter les logs pendant les tests.
+     */
     protected function setUp(): void
     {
         $this->scanner = new SemgrepScanner(new NullLogger());
     }
 
+    /**
+     * Teste que le nom du scanner est correct.
+     * Le scanner doit s'identifier comme 'semgrep'.
+     */
     public function testGetName(): void
     {
         $this->assertSame('semgrep', $this->scanner->getName());
     }
 
+    /**
+     * Teste que le scan retourne un tableau vide si Semgrep n'est pas installé.
+     * Si l'outil n'est pas disponible, le scan ne doit pas échouer mais retourner un résultat vide.
+     */
     public function testScanReturnsEmptyIfNotAvailable(): void
     {
         if ($this->scanner->isAvailable()) {
@@ -32,14 +44,19 @@ class SemgrepScannerTest extends TestCase
         $this->assertEmpty($result);
     }
 
+    /**
+     * Teste que la méthode isAvailable retourne un booléen.
+     * Cette méthode vérifie si Semgrep est installé sur le système.
+     */
     public function testIsAvailableReturnsBool(): void
     {
         $this->assertIsBool($this->scanner->isAvailable());
     }
 
     /**
-     * Test du parsing via un fichier JSON simulé (sans lancer Semgrep)
-     * On utilise la réflexion pour accéder à parseResult()
+     * Teste le parsing des résultats Semgrep.
+     * Vérifie que les données brutes JSON sont correctement converties en DTO.
+     * Utilise la réflexion pour accéder à la méthode privée parseResult().
      */
     public function testParseResultMapsCorrectly(): void
     {
@@ -67,7 +84,13 @@ class SemgrepScannerTest extends TestCase
         $this->assertSame(OwaspCategory::A05_INJECTION, $dto->owaspCategory);
     }
 
-    /** @dataProvider ruleOwaspProvider */
+    /**
+     * Teste le mapping des règles Semgrep vers les catégories OWASP.
+     * Chaque règle Semgrep doit être associée à la bonne catégorie de vulnérabilité.
+     * 
+     * @dataProvider ruleOwaspProvider - Fournit les cas de test pour chaque règle
+     */
+    #[\PHPUnit\Framework\Attributes\DataProvider('ruleOwaspProvider')]
     public function testMapRuleToOwasp(string $ruleId, OwaspCategory $expected): void
     {
         $method = new \ReflectionMethod($this->scanner, 'mapRuleToOwasp');
@@ -75,6 +98,10 @@ class SemgrepScannerTest extends TestCase
         $this->assertSame($expected, $result);
     }
 
+    /**
+     * Fournit les données de test pour le mapping règles OWASP.
+     * Chaque entrée contient: [ID de règle Semgrep, catégorie OWASP attendue]
+     */
     public static function ruleOwaspProvider(): array
     {
         return [
@@ -90,3 +117,4 @@ class SemgrepScannerTest extends TestCase
         ];
     }
 }
+

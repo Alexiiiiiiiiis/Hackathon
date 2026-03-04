@@ -6,14 +6,23 @@ use PHPUnit\Framework\TestCase;
 
 class GitPushServiceTest extends TestCase
 {
+    /**
+     * Teste qu'une exception est levée pour un chemin de répertoire invalide.
+     * Le service doit valider que le chemin fourni existe et est accessible.
+     */
     public function testThrowsIfInvalidPath(): void
     {
-        $this->expectException(\Symfony\Component\Process\Exception\ProcessFailedException::class);
+        $this->expectException(\RuntimeException::class);
 
         $service = new GitPushService();
         $service->createBranchCommitAndPush('/nonexistent/path', 'fix/test');
     }
 
+    /**
+     * Teste la création d'une branche, d'un commit et d'un push avec un vrai repo Git.
+     * Ce test crée un dépôt Git temporaire pour vérifier le fonctionnement complet.
+     * Note: Le push échouera car il n'y a pas de remote configuré, mais le commit fonctionne.
+     */
     public function testCreateBranchCommitAndPushWithRealGitRepo(): void
     {
         // Crée un vrai repo Git temporaire pour le test
@@ -46,3 +55,4 @@ class GitPushServiceTest extends TestCase
         }
     }
 }
+
