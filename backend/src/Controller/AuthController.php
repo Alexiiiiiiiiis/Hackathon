@@ -25,7 +25,7 @@ class AuthController extends AbstractController
         private readonly ValidatorInterface           $validator,
     ) {}
 
-    // ── POST /api/auth/register ──────────────────────────────────────
+    //  POST /api/auth/register 
     #[Route('/register', name: 'register', methods: ['POST'])]
     public function register(Request $request): JsonResponse
     {
@@ -66,7 +66,7 @@ class AuthController extends AbstractController
         ], Response::HTTP_CREATED);
     }
 
-    // ── POST /api/auth/login ─────────────────────────────────────────
+    //  POST /api/auth/login 
     // (LexikJWT gère automatiquement /api/auth/login via security.yaml)
     // Ce endpoint sert de fallback documentaire
     #[Route('/me', name: 'me', methods: ['GET'])]
