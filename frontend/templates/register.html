@@ -15,7 +15,7 @@
     html,body{height:100%;font-family:'Sora',sans-serif;}
 
     body{
-      display:flex;min-height:100vh;overflow-y:auto;
+      display:flex;min-height:100vh;overflow-y:auto;align-items:center;
       background:radial-gradient(ellipse 80% 60% at 30% 50%, #1a2d5a 0%, #09111f 70%);
       position:relative;
     }
@@ -31,7 +31,7 @@
     /* ── LEFT PANEL ── */
     .left{
       flex:0 0 42%;display:flex;flex-direction:column;justify-content:center;
-      padding:48px 52px;position:relative;z-index:2;
+      padding:48px 52px;position:relative;z-index:2;align-self:stretch;
     }
     .left-brand{display:flex;align-items:center;gap:9px;margin-bottom:48px;}
     .left-brand svg{width:22px;height:22px;stroke:#38bdf8;fill:rgba(56,189,248,.15);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
@@ -51,12 +51,12 @@
 
     /* ── RIGHT PANEL (card) ── */
     .right{
-      flex:1;display:flex;align-items:flex-start;justify-content:center;
-      padding:24px;position:relative;z-index:2;min-height:100%;
+      flex:1;display:flex;align-items:center;justify-content:center;
+      padding:24px;position:relative;z-index:2;
     }
     .card{
       background:#fff;border-radius:16px;width:100%;max-width:420px;
-      padding:28px 32px 24px;
+      padding:32px 36px 28px;
       box-shadow:0 24px 64px rgba(0,0,0,.25),0 4px 16px rgba(0,0,0,.15);
       animation:fadeUp .5s cubic-bezier(.16,1,.3,1) both;
     }
@@ -133,10 +133,10 @@
 
   <!-- LEFT -->
   <div class="left">
-    <div class="left-brand">
+    <a class="left-brand" href="index.html" style="text-decoration:none;cursor:pointer;">
       <svg viewBox="0 0 24 24"><path d="M12 2L4 6v6c0 5.25 3.5 10.15 8 11.5C16.5 22.15 20 17.25 20 12V6L12 2z"/></svg>
       <span>SecureScan</span>
-    </div>
+    </a>
     <h1>
       Commence a sécuriser
       <span class="accent">Ton code dès MAINTENANT</span>
@@ -321,7 +321,7 @@
 
       if(res.ok){
         // ✅ Succès → redirection vers le dashboard
-        window.location.href = 'dashboard3.html';
+        window.location.href = 'dashboard.html';
       } else {
         // ❌ Erreur serveur (ex: email déjà utilisé)
         showGlobalError(data.message || 'Une erreur est survenue. Veuillez réessayer.');
@@ -329,7 +329,7 @@
     } catch(e) {
       // Backend non connecté → redirection directe pour démo
       console.warn('[SecureScan] Backend non connecté, redirection de démo.');
-      window.location.href = 'dashboard3.html';
+      window.location.href = 'dashboard.html';
     } finally {
       setLoading(false);
     }
