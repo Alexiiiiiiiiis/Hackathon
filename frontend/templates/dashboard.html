@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SecureScan – Tableau de bord</title>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{
+      --sb:#1c2133;--sb2:#242a40;--main:#eef0f4;--card:#fff;
+      --td:#1a1f2e;--tm:#4a5568;--tl:#9aa3b5;
+      --blue:#3b82f6;--crit:#ef4444;--high:#f97316;--med:#eab308;--low:#22c55e;--bdr:#e2e8f0;
+    }
+    html,body{height:100%;font-family:'Sora',sans-serif;}
+    .layout{display:flex;height:100vh;overflow:hidden;}
+
+    /* ── SIDEBAR ── */
+    .sidebar{
+      width:148px;background:var(--sb);display:flex;flex-direction:column;
+      padding:16px 0 0;flex-shrink:0;
+    }
+    .sb-brand{
+      display:flex;align-items:center;gap:7px;padding:0 14px 20px;
+      font-size:0.85rem;font-weight:600;color:#e8edf8;text-decoration:none;
+    }
+    .sb-brand svg{width:15px;height:15px;stroke:#38bdf8;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0;}
+
+    .sb-nav{display:flex;flex-direction:column;gap:1px;padding:0 8px;flex:1;}
+    .ni{
+      display:flex;align-items:center;gap:7px;padding:8px 10px;
+      border-radius:7px;font-size:0.74rem;font-weight:500;color:#7a8aaa;
+      cursor:pointer;text-decoration:none;transition:background .2s,color .2s;
+    }
+    .ni svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0;}
+    .ni:hover{background:rgba(255,255,255,.06);color:#d0daf0;}
+    .ni.active{background:#3b82f6;color:#fff;}
+
+    /* ── Sidebar bottom ── */
+    .sb-bottom{
+      display:flex;flex-direction:column;gap:0;
+      border-top:1px solid rgba(255,255,255,.06);
+      margin-top:8px;
+    }
+
+    /* Score mini widget */
+    .sw{padding:10px 12px;border-bottom:1px solid rgba(255,255,255,.05);}
+    .sw-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;}
+    .sw-lbl{font-size:0.62rem;color:#6a7a99;}
+    .sw-trend svg{width:11px;height:11px;stroke:#22c55e;fill:none;stroke-width:2;stroke-linecap:round;}
+    .sw-val{font-size:1.25rem;font-weight:700;color:#e8edf8;line-height:1;}
+    .sw-val sub{font-size:0.6rem;font-weight:400;color:#6a7a99;vertical-align:baseline;}
+    .sw-track{height:3px;background:rgba(255,255,255,.08);border-radius:2px;margin-top:5px;overflow:hidden;}
+    .sw-fill{height:100%;border-radius:2px;background:linear-gradient(90deg,#f97316,#ef4444);}
+
+    /* Detected mini widget */
+    .sd{padding:10px 12px;border-bottom:1px solid rgba(255,255,255,.05);}
+    .sd-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:2px;}
+    .sd-lbl{font-size:0.62rem;color:#6a7a99;}
+    .sd-icon svg{width:11px;height:11px;stroke:#ef4444;fill:none;stroke-width:2;stroke-linecap:round;}
+    .sd-count{font-size:1.25rem;font-weight:700;color:#e8edf8;line-height:1;}
+    .sd-sub{font-size:0.6rem;color:#6a7a99;margin-top:2px;}
+    .sd-sub b{color:var(--crit);}
+    .sd-sub b.h{color:var(--high);}
+
+    /* User block */
+    .su{
+      display:flex;align-items:center;gap:8px;
+      padding:10px 12px 6px;
+    }
+    .su-av{
+      width:26px;height:26px;border-radius:50%;background:#3b82f6;
+      display:flex;align-items:center;justify-content:center;
+      font-size:0.72rem;font-weight:700;color:#fff;flex-shrink:0;
+    }
+    .su-info{flex:1;min-width:0;}
+    .su-name{font-size:0.7rem;font-weight:600;color:#d0daf0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+    .su-mail{font-size:0.58rem;color:#6a7a99;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+    .sb-out{
+      display:flex;align-items:center;gap:6px;
+      padding:4px 12px 12px;font-size:0.65rem;color:#6a7a99;
+      text-decoration:none;cursor:pointer;transition:color .2s;
+    }
+    .sb-out svg{width:11px;height:11px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;}
+    .sb-out:hover{color:#d0daf0;}
+
+    /* ── MAIN ── */
+    .main{flex:1;background:var(--main);overflow-y:auto;padding:24px;}
+    .page-title{font-size:1.2rem;font-weight:700;color:var(--td);margin-bottom:16px;}
+    .card{background:var(--card);border-radius:12px;border:1px solid var(--bdr);padding:18px 20px;}
+
+    /* Score card */
+    .score-card{margin-bottom:14px;}
+    .sc-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+    .sc-ttl{font-size:0.86rem;font-weight:600;color:var(--td);}
+    .badge-s{border-radius:20px;padding:3px 10px;font-size:0.65rem;font-weight:600;background:#fef3c7;color:#92400e;border:1px solid #fcd34d;}
+    .score-body{display:flex;align-items:center;gap:24px;}
+    .sc-circle{flex-shrink:0;width:82px;height:82px;position:relative;}
+    .sc-circle svg{width:82px;height:82px;transform:rotate(-90deg);}
+    .sc-circle .tr{fill:none;stroke:#f1f5f9;stroke-width:7;}
+    .sc-circle .fi{fill:none;stroke:#f97316;stroke-width:7;stroke-linecap:round;stroke-dasharray:210;stroke-dashoffset:58;transition:stroke-dashoffset 1s ease;}
+    .sc-txt{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+    .sc-num{font-size:1.35rem;font-weight:700;color:#f97316;line-height:1;}
+    .sc-den{font-size:0.6rem;color:var(--tl);}
+    .bars{flex:1;display:flex;flex-direction:column;gap:11px;}
+    .br{display:flex;flex-direction:column;gap:4px;}
+    .bl2{display:flex;justify-content:space-between;font-size:0.7rem;font-weight:600;color:var(--td);}
+    .bt{height:6px;background:#f1f5f9;border-radius:3px;overflow:hidden;}
+    .bf{height:100%;border-radius:3px;transition:width 1s ease;}
+
+    /* Two col */
+    .two-col{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;}
+    .stl{font-size:0.76rem;font-weight:600;color:var(--tm);margin-bottom:14px;}
+    .gnums{display:flex;justify-content:center;gap:20px;padding:10px 0 4px;}
+    .gi{text-align:center;}
+    .gn{font-size:1.45rem;font-weight:700;line-height:1;margin-bottom:2px;}
+    .gn.c{color:var(--crit);}.gn.h{color:var(--high);}.gn.m{color:var(--med);}.gn.l{color:var(--low);}
+    .glb{font-size:0.65rem;color:var(--tl);}
+
+    .ob{display:flex;align-items:center;gap:16px;}
+    .oc{flex-shrink:0;position:relative;width:100px;height:100px;}
+    .oc svg{width:100px;height:100px;}
+    .ot{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+    .ot .on{font-size:1.25rem;font-weight:700;color:var(--td);line-height:1;}
+    .ot .ol{font-size:0.58rem;color:var(--tl);}
+    .oleg{display:flex;flex-direction:column;gap:5px;}
+    .oli{display:flex;align-items:center;gap:5px;font-size:0.65rem;color:var(--tm);}
+    .old{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+
+    /* Filters */
+    .frow{display:flex;align-items:center;gap:8px;}
+    .flbl{font-size:0.74rem;font-weight:500;color:var(--tm);flex-shrink:0;}
+    .fin{padding:6px 10px;border:1px solid var(--bdr);border-radius:7px;font-family:'Sora',sans-serif;font-size:0.72rem;color:var(--td);background:#fff;outline:none;width:105px;transition:border-color .2s;}
+    .fin:focus{border-color:var(--blue);}
+
+    /* Table */
+    .rc{padding:0;overflow:hidden;margin-top:12px;}
+    .rh{padding:11px 16px;font-size:0.8rem;font-weight:600;color:var(--td);border-bottom:1px solid var(--bdr);}
+    table{width:100%;border-collapse:collapse;}
+    thead th{padding:8px 16px;text-align:left;font-size:0.68rem;font-weight:600;color:var(--tl);border-bottom:1px solid var(--bdr);background:#fafbfc;}
+    tbody tr{border-bottom:1px solid #f1f5f9;transition:background .15s;}
+    tbody tr:last-child{border-bottom:none;}
+    tbody tr:hover{background:#f8faff;}
+    tbody td{padding:10px 16px;font-size:0.74rem;color:var(--td);}
+    .badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:20px;font-size:0.66rem;font-weight:600;}
+    .badge svg{width:9px;height:9px;}
+    .bc{background:#fee2e2;color:var(--crit);}
+    .bh{background:#ffedd5;color:var(--high);}
+    .bm{background:#fefce8;color:var(--med);}
+    .bl{background:#f0fdf4;color:var(--low);}
+    .btnc{padding:5px 13px;background:var(--blue);color:#fff;border:none;border-radius:7px;font-family:'Sora',sans-serif;font-size:0.68rem;font-weight:600;cursor:pointer;transition:opacity .2s;}
+    .btnc:hover{opacity:.85;}
+  </style>
+</head>
+<body>
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <a class="sb-brand" href="index.html">
+      <svg viewBox="0 0 24 24"><path d="M12 2L4 6v6c0 5.25 3.5 10.15 8 11.5C16.5 22.15 20 17.25 20 12V6L12 2z"/></svg>
+      SecureScan
+    </a>
+
+    <nav class="sb-nav">
+      <a class="ni active" href="#">
+        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        Tableau de bord
+      </a>
+      <a class="ni" href="#">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+        Nouvelle analyse
+      </a>
+      <a class="ni" href="#">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        Historique
+      </a>
+      <a class="ni" href="#">
+        <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        Rapports
+      </a>
+    </nav>
+
+    <!-- Bottom -->
+    <div class="sb-bottom">
+
+      <!-- Score widget -->
+      <div class="sw">
+        <div class="sw-top">
+          <span class="sw-lbl">Niveau de sécurité</span>
+          <span class="sw-trend"><svg viewBox="0 0 24 24"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg></span>
+        </div>
+        <div class="sw-val"><span id="sw-score">72</span><sub> /100</sub></div>
+        <div class="sw-track"><div class="sw-fill" id="sw-bar" style="width:72%"></div></div>
+      </div>
+
+      <!-- Detected widget -->
+      <div class="sd">
+        <div class="sd-top">
+          <span class="sd-lbl">Problèmes détectés</span>
+          <span class="sd-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></span>
+        </div>
+        <div class="sd-count" id="sw-total">23</div>
+        <div class="sd-sub"><b id="sw-crit">2</b> Critiques · <b class="h" id="sw-high">7</b> élevés</div>
+      </div>
+
+      <!-- User -->
+      <div class="su">
+        <div class="su-av">E</div>
+        <div class="su-info">
+          <div class="su-name">Emiliekk</div>
+          <div class="su-mail">emiliek@company.com</div>
+        </div>
+      </div>
+      <a class="sb-out" href="login.html">
+        <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        Se déconnecter
+      </a>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+    <h1 class="page-title">Tableau de bord</h1>
+
+    <!-- Score card -->
+    <div class="card score-card">
+      <div class="sc-hdr">
+        <span class="sc-ttl">Score globale du niveau de Sécurité</span>
+        <span class="badge-s" id="score-badge">Besoin d'amélioration</span>
+      </div>
+      <div class="score-body">
+        <div class="sc-circle">
+          <svg viewBox="0 0 86 86">
+            <circle class="tr" cx="43" cy="43" r="34"/>
+            <circle class="fi" id="sc-fill" cx="43" cy="43" r="34"/>
+          </svg>
+          <div class="sc-txt">
+            <span class="sc-num" id="score-val">–</span>
+            <span class="sc-den">/100</span>
+          </div>
+        </div>
+        <div class="bars">
+          <div class="br">
+            <div class="bl2"><span>Problèmes critiques</span><span id="cnt-c" style="color:var(--crit)">–</span></div>
+            <div class="bt"><div class="bf" id="bar-c" style="background:var(--crit);width:0%"></div></div>
+          </div>
+          <div class="br">
+            <div class="bl2"><span>Haute priorité</span><span id="cnt-h" style="color:var(--high)">–</span></div>
+            <div class="bt"><div class="bf" id="bar-h" style="background:var(--high);width:0%"></div></div>
+          </div>
+          <div class="br">
+            <div class="bl2"><span>Risque moyen</span><span id="cnt-m" style="color:var(--med)">–</span></div>
+            <div class="bt"><div class="bf" id="bar-m" style="background:var(--med);width:0%"></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Two col -->
+    <div class="two-col">
+      <div class="card">
+        <div class="stl">Répartition des vulnérabilités par gravité</div>
+        <div class="gnums">
+          <div class="gi"><div class="gn c" id="g-c">–</div><div class="glb">Critique</div></div>
+          <div class="gi"><div class="gn h" id="g-h">–</div><div class="glb">élevée</div></div>
+          <div class="gi"><div class="gn m" id="g-m">–</div><div class="glb">moyenne</div></div>
+          <div class="gi"><div class="gn l" id="g-l">–</div><div class="glb">basse</div></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="stl">Répartition par catégorie OWASP Top 10</div>
+        <div class="ob">
+          <div class="oc">
+            <svg id="owasp-svg" viewBox="0 0 110 110">
+              <circle cx="55" cy="55" r="38" fill="none" stroke="#e2e8f0" stroke-width="18"/>
+              <circle cx="55" cy="55" r="26" fill="white" id="owasp-cover"/>
+            </svg>
+            <div class="ot"><span class="on" id="owasp-total">–</span><span class="ol">Total</span></div>
+          </div>
+          <div class="oleg" id="owasp-legend"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="card" style="padding:12px 16px;">
+      <div class="frow">
+        <span class="flbl">Filtres:</span>
+        <input class="fin" id="ff" type="text" placeholder="Fichier..."   oninput="filterTable()"/>
+        <input class="fin" id="fs" type="text" placeholder="Gravité..."   oninput="filterTable()"/>
+        <input class="fin" id="fo" type="text" placeholder="Catégorie..." oninput="filterTable()"/>
+      </div>
+    </div>
+
+    <!-- Table -->
+    <div class="card rc">
+      <div class="rh">Détails du résultats</div>
+      <table>
+        <thead><tr><th>Fichier</th><th>Ligne</th><th>Gravité</th><th>Catégorie OWASP</th><th>Action</th></tr></thead>
+        <tbody id="vuln-tbody">
+          <tr><td colspan="5" style="text-align:center;padding:16px;color:var(--tl)">Chargement…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
+</div>
+
+<script>
+  // ── CONFIG API ─────────────────────────────────────────────────
+  const API_BASE = '/api';
+  const ENDPOINTS = {
+    dashboard:       API_BASE + '/dashboard',
+    vulnerabilities: API_BASE + '/vulnerabilities',
+    fix:             API_BASE + '/fix',
+  };
+
+  // ── MOCK DATA — à supprimer quand le backend est prêt ──────────
+  // GET /api/dashboard       → { score, critical, high, medium, low, owasp:[{label,count,color}] }
+  // GET /api/vulnerabilities → [ { file, line, severity, owasp } ]
+  // POST /api/fix            → body: { file, line }
+  const MOCK = {
+    dashboard:{
+      score:72, critical:2, high:7, medium:12, low:4,
+      owasp:[
+        {label:'A03: Injection',                count:8, color:'#ef4444'},
+        {label:"A01: Contrôle d'accès",         count:5, color:'#1e293b'},
+        {label:'A05: Mauvaise configuration',   count:4, color:'#eab308'},
+        {label:"A07: Erreur d'authentification", count:3, color:'#3b82f6'},
+        {label:'Autres',                        count:3, color:'#8b5cf6'},
+      ]
+    },
+    vulnerabilities:[
+      {file:'auth.js',      line:42,  severity:'critical', owasp:'A03-2021-Injection'},
+      {file:'api/users.js', line:156, severity:'high',     owasp:'A01-2021-acces cassé'},
+      {file:'config.js',    line:8,   severity:'critical', owasp:'A05-2021-mauvaise configuration sécurité'},
+    ]
+  };
+
+  async function fetchData(url, key){
+    try{
+      const r=await fetch(url,{headers:{'Accept':'application/json'}});
+      if(!r.ok) throw new Error('HTTP '+r.status);
+      return await r.json();
+    }catch(e){
+      console.warn('[SecureScan] API indisponible, données de démo.',e.message);
+      return MOCK[key];
+    }
+  }
+
+  function renderScore(d){
+    document.getElementById('score-val').textContent=d.score;
+    document.getElementById('sw-score').textContent=d.score;
+    document.getElementById('sw-bar').style.width=d.score+'%';
+
+    const circ=210, off=circ-(d.score/100)*circ;
+    document.getElementById('sc-fill').style.strokeDashoffset=off;
+    document.getElementById('sc-fill').style.strokeDasharray=circ;
+
+    const badge=document.getElementById('score-badge');
+    if(d.score>=80){badge.textContent='Bon niveau';badge.style.cssText='background:#dcfce7;color:#166534;border:1px solid #86efac;border-radius:20px;padding:3px 10px;font-size:.65rem;font-weight:600';}
+    else if(d.score<60){badge.textContent='Niveau critique';badge.style.cssText='background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;border-radius:20px;padding:3px 10px;font-size:.65rem;font-weight:600';}
+
+    const tot=(d.critical+d.high+d.medium+d.low)||1;
+    document.getElementById('cnt-c').textContent=d.critical;
+    document.getElementById('cnt-h').textContent=d.high;
+    document.getElementById('cnt-m').textContent=d.medium;
+    document.getElementById('bar-c').style.width=Math.max(4,d.critical/tot*100)+'%';
+    document.getElementById('bar-h').style.width=Math.max(4,d.high/tot*100)+'%';
+    document.getElementById('bar-m').style.width=Math.max(4,d.medium/tot*100)+'%';
+    document.getElementById('g-c').textContent=d.critical;
+    document.getElementById('g-h').textContent=d.high;
+    document.getElementById('g-m').textContent=d.medium;
+    document.getElementById('g-l').textContent=d.low;
+    document.getElementById('sw-total').textContent=d.critical+d.high+d.medium+d.low;
+    document.getElementById('sw-crit').textContent=d.critical;
+    document.getElementById('sw-high').textContent=d.high;
+  }
+
+  function renderOwasp(cats){
+    const total=cats.reduce((s,c)=>s+c.count,0);
+    document.getElementById('owasp-total').textContent=total;
+    const R=38,CX=55,CY=55,circ=2*Math.PI*R;
+    const svg=document.getElementById('owasp-svg');
+    svg.querySelectorAll('.seg').forEach(e=>e.remove());
+    let off=0;
+    cats.forEach(cat=>{
+      const arc=(cat.count/total)*circ;
+      const el=document.createElementNS('http://www.w3.org/2000/svg','circle');
+      el.setAttribute('class','seg');
+      el.setAttribute('cx',CX);el.setAttribute('cy',CY);el.setAttribute('r',R);
+      el.setAttribute('fill','none');el.setAttribute('stroke',cat.color);el.setAttribute('stroke-width','18');
+      el.setAttribute('stroke-dasharray',arc+' '+(circ-arc));
+      el.setAttribute('stroke-dashoffset',-off);
+      el.setAttribute('transform','rotate(-90 '+CX+' '+CY+')');
+      svg.insertBefore(el,document.getElementById('owasp-cover'));
+      off+=arc;
+    });
+    document.getElementById('owasp-legend').innerHTML=cats.map(c=>
+      '<div class="oli"><div class="old" style="background:'+c.color+'"></div>'+c.label+'</div>'
+    ).join('');
+  }
+
+  let allVulns=[];
+  const SEV={
+    critical:{lbl:'Critique',cls:'bc',icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>'},
+    high:    {lbl:'élevée',  cls:'bh',icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/></svg>'},
+    medium:  {lbl:'Moyenne', cls:'bm',icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/></svg>'},
+    low:     {lbl:'Basse',   cls:'bl',icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>'},
+  };
+
+  function renderTable(vulns){
+    const tb=document.getElementById('vuln-tbody');
+    if(!vulns.length){tb.innerHTML='<tr><td colspan="5" style="text-align:center;padding:16px;color:var(--tl)">Aucun résultat</td></tr>';return;}
+    tb.innerHTML=vulns.map(v=>{
+      const s=SEV[v.severity]||{lbl:v.severity,cls:'',icon:''};
+      return '<tr><td>'+v.file+'</td><td>'+v.line+'</td><td><span class="badge '+s.cls+'">'+s.icon+' '+s.lbl+'</span></td><td>'+v.owasp+'</td><td><button class="btnc" onclick="handleFix(\''+v.file+'\','+v.line+')">Corriger</button></td></tr>';
+    }).join('');
+  }
+
+  function filterTable(){
+    const f=document.getElementById('ff').value.toLowerCase();
+    const s=document.getElementById('fs').value.toLowerCase();
+    const o=document.getElementById('fo').value.toLowerCase();
+    renderTable(allVulns.filter(v=>v.file.toLowerCase().includes(f)&&v.severity.toLowerCase().includes(s)&&v.owasp.toLowerCase().includes(o)));
+  }
+
+  async function handleFix(file,line){
+    try{
+      const r=await fetch(ENDPOINTS.fix,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({file,line})});
+      if(!r.ok) throw new Error();
+      alert('Correction lancée pour '+file+' ligne '+line);
+      init();
+    }catch(e){
+      alert('Correction demandée pour '+file+' ligne '+line+' (backend non connecté)');
+    }
+  }
+
+  async function init(){
+    const [dash,vulns]=await Promise.all([
+      fetchData(ENDPOINTS.dashboard,'dashboard'),
+      fetchData(ENDPOINTS.vulnerabilities,'vulnerabilities'),
+    ]);
+    renderScore(dash);
+    renderOwasp(dash.owasp);
+    allVulns=vulns;
+    renderTable(allVulns);
+  }
+
+  init();
+</script>
+</body>
+</html>
