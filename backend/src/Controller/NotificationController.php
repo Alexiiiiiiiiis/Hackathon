@@ -7,6 +7,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Routing\Attribute\Route;
 
 #[Route('/api/notifications', name: 'api_notifications_')]
+// Route notifications: compteur de fixes en attente
 class NotificationController extends AbstractController
 {
     public function __construct(private readonly FixRepository $fixRepository) {}
@@ -19,4 +20,3 @@ class NotificationController extends AbstractController
         ]);
     }
 }
-

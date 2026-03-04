@@ -10,6 +10,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 
 #[Route('/api/report')]
+// Route rapport: generation HTML par projet
 class ReportController extends AbstractController
 {
     #[Route('/{id}', methods: ['GET'])]

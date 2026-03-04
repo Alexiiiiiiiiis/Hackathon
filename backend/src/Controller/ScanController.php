@@ -16,6 +16,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 
 #[Route('/api/scan', name: 'api_scan_')]
+// Routes scan: submit, launch, resultats, stats OWASP, latest
 class ScanController extends AbstractController
 {
     public function __construct(
@@ -161,4 +162,3 @@ class ScanController extends AbstractController
         return $this->results((int) $latest->getId());
     }
 }
-
