@@ -240,7 +240,7 @@
       les mappe au OWASP Top 10, suggère des correctifs automatiques et
       s'intègre directement à votre environnement Git
     </p>
-    <a href="#" class="btn-start">
+    <a href="#" class="btn-start" onclick="handleCommencer(event)">
       Commencer <span class="arrow">›</span>
     </a>
   </section>
@@ -291,5 +291,18 @@
 
   </section>
 
+
+<script>
+  function handleCommencer(e) {
+    e.preventDefault();
+    const token = sessionStorage.getItem('auth_token');
+    if (token) {
+      window.location.href = 'nouvelle_analyse.html';
+    } else {
+      sessionStorage.setItem('redirect_after_login', 'nouvelle_analyse.html');
+      window.location.href = 'login.html';
+    }
+  }
+</script>
 </body>
 </html>
