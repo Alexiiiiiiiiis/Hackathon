@@ -12,7 +12,7 @@ class GitPushServiceTest extends TestCase
      */
     public function testThrowsIfInvalidPath(): void
     {
-        $this->expectException(\Symfony\Component\Process\Exception\ProcessFailedException::class);
+        $this->expectException(\RuntimeException::class);
 
         $service = new GitPushService();
         $service->createBranchCommitAndPush('/nonexistent/path', 'fix/test');

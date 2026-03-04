@@ -165,6 +165,7 @@ class ScanResultTest extends TestCase
      * 
      * @dataProvider gradeProvider - Fournit les cas de test pour chaque scénario
      */
+    #[\PHPUnit\Framework\Attributes\DataProvider('gradeProvider')]
     public function testGradeMapping(int $criticals, int $highs, string $expectedGrade): void
     {
         $scan = new ScanResult();

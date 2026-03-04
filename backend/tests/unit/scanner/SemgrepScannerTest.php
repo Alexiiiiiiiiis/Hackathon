@@ -90,6 +90,7 @@ class SemgrepScannerTest extends TestCase
      * 
      * @dataProvider ruleOwaspProvider - Fournit les cas de test pour chaque règle
      */
+    #[\PHPUnit\Framework\Attributes\DataProvider('ruleOwaspProvider')]
     public function testMapRuleToOwasp(string $ruleId, OwaspCategory $expected): void
     {
         $method = new \ReflectionMethod($this->scanner, 'mapRuleToOwasp');
