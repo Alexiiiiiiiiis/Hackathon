@@ -18,7 +18,7 @@
     </a>
 
     <nav class="sb-nav">
-      <a class="ni active" href="#">
+      <a class="ni active" href="dashboard.html">
         <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
         Tableau de bord
       </a>
@@ -30,44 +30,39 @@
         <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
         Historique
       </a>
-      <a class="ni" href="#">
+      <a class="ni" id="report-link" href="#" target="_blank">
         <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
         Rapports
       </a>
     </nav>
 
-    <!-- Bottom -->
     <div class="sb-bottom">
-
-      <!-- Score widget -->
       <div class="sw">
         <div class="sw-top">
           <span class="sw-lbl">Niveau de sécurité</span>
           <span class="sw-trend"><svg viewBox="0 0 24 24"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg></span>
         </div>
-        <div class="sw-val"><span id="sw-score">72</span><sub> /100</sub></div>
-        <div class="sw-track"><div class="sw-fill" id="sw-bar" style="width:72%"></div></div>
+        <div class="sw-val"><span id="sw-score">–</span><sub> /100</sub></div>
+        <div class="sw-track"><div class="sw-fill" id="sw-bar" style="width:0%"></div></div>
       </div>
 
-      <!-- Detected widget -->
       <div class="sd">
         <div class="sd-top">
           <span class="sd-lbl">Problèmes détectés</span>
           <span class="sd-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></span>
         </div>
-        <div class="sd-count" id="sw-total">23</div>
-        <div class="sd-sub"><b id="sw-crit">2</b> Critiques · <b class="h" id="sw-high">7</b> élevés</div>
+        <div class="sd-count" id="sw-total">–</div>
+        <div class="sd-sub"><b id="sw-crit">–</b> Critiques · <b class="h" id="sw-high">–</b> élevés</div>
       </div>
 
-      <!-- User -->
       <div class="su">
-        <div class="su-av">E</div>
+        <div class="su-av">?</div>
         <div class="su-info">
-          <div class="su-name">Emiliekk</div>
-          <div class="su-mail">emiliek@company.com</div>
+          <div class="su-name">Chargement…</div>
+          <div class="su-mail"></div>
         </div>
       </div>
-      <a class="sb-out" href="login.html">
+      <a class="sb-out" href="#">
         <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
         Se déconnecter
       </a>
@@ -82,7 +77,7 @@
     <div class="card score-card">
       <div class="sc-hdr">
         <span class="sc-ttl">Score globale du niveau de Sécurité</span>
-        <span class="badge-s" id="score-badge">Besoin d'amélioration</span>
+        <span class="badge-s" id="score-badge">Chargement…</span>
       </div>
       <div class="score-body">
         <div class="sc-circle">
@@ -118,9 +113,9 @@
         <div class="stl">Répartition des vulnérabilités par gravité</div>
         <div class="gnums">
           <div class="gi"><div class="gn c" id="g-c">–</div><div class="glb">Critique</div></div>
-          <div class="gi"><div class="gn h" id="g-h">–</div><div class="glb">élevée</div></div>
-          <div class="gi"><div class="gn m" id="g-m">–</div><div class="glb">moyenne</div></div>
-          <div class="gi"><div class="gn l" id="g-l">–</div><div class="glb">basse</div></div>
+          <div class="gi"><div class="gn h" id="g-h">–</div><div class="glb">Élevée</div></div>
+          <div class="gi"><div class="gn m" id="g-m">–</div><div class="glb">Moyenne</div></div>
+          <div class="gi"><div class="gn l" id="g-l">–</div><div class="glb">Basse</div></div>
         </div>
       </div>
       <div class="card">
@@ -138,19 +133,19 @@
       </div>
     </div>
 
-    <!-- Filters -->
+    <!-- Filtres -->
     <div class="card" style="padding:12px 16px;">
       <div class="frow">
         <span class="flbl">Filtres:</span>
-        <input class="fin" id="ff" type="text" placeholder="Fichier..."   oninput="filterTable()"/>
-        <input class="fin" id="fs" type="text" placeholder="Gravité..."   oninput="filterTable()"/>
-        <input class="fin" id="fo" type="text" placeholder="Catégorie..." oninput="filterTable()"/>
+        <input class="fin" id="ff" type="text" placeholder="Fichier…"    oninput="filterTable()"/>
+        <input class="fin" id="fs" type="text" placeholder="Gravité…"    oninput="filterTable()"/>
+        <input class="fin" id="fo" type="text" placeholder="Catégorie…"  oninput="filterTable()"/>
       </div>
     </div>
 
-    <!-- Table -->
+    <!-- Tableau -->
     <div class="card rc">
-      <div class="rh">Détails du résultats</div>
+      <div class="rh">Détails des résultats</div>
       <table>
         <thead><tr><th>Fichier</th><th>Ligne</th><th>Gravité</th><th>Catégorie OWASP</th><th>Action</th></tr></thead>
         <tbody id="vuln-tbody">
@@ -160,6 +155,8 @@
     </div>
   </main>
 </div>
+
+<script src="js/api.js"></script>
 <script src="js/dashboard.js"></script>
 </body>
 </html>
