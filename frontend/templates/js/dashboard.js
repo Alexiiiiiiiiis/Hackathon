@@ -2,50 +2,51 @@
  * SecureScan – dashboard.js
  * Charge les projets, le dernier scan, les stats et le tableau de vulnérabilités
  */
-
+ 
+bootstrapOAuthTokenFromUrl();
 requireAuth();
-
+ 
 let allVulns = [];
-
+ 
 document.addEventListener('DOMContentLoaded', async () => {
   loadUserInfo();
   bindLogout();
   await loadDashboard();
   await loadNotifications();
 });
-
+ 
 function bindLogout() {
   document.querySelectorAll('.sb-out').forEach(el => {
     el.addEventListener('click', e => { e.preventDefault(); Auth.logout(); });
   });
 }
-
+ 
 // ── Chargement principal ──────────────────────────────────────
 async function loadDashboard() {
   try {
     const projects = await Projects.list();
     if (!projects || projects.length === 0) { showEmpty(); return; }
-
+ 
     projects.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-
+ 
     let scan = null;
     for (const p of projects) {
       try { scan = await Scans.latest(p.id); break; } catch { /* essayer suivant */ }
     }
     if (!scan) { showEmpty(); return; }
-
+ 
     renderScore(scan);
     renderSeverityGrid(scan);
     renderOwaspChart(scan);
     renderVulnTable(scan.vulns || []);
     renderSidebarStats(scan);
-
+ 
   } catch (err) {
     console.error('[Dashboard]', err);
     showError(err.message);
   }
 }
-
+ 
 // ── Score circulaire ──────────────────────────────────────────
 function renderScore(scan) {
   const vulns = scan.vulns || [];
@@ -54,9 +55,9 @@ function renderScore(scan) {
   const high  = countBy(vulns, 'high');
   const med   = countBy(vulns, 'medium');
   const total = vulns.length;
-
+ 
   set('score-val', score);
-
+ 
   // Arc SVG (r=34, circonférence ≈ 213.6)
   const circ = 2 * Math.PI * 34;
   const fill = document.getElementById('sc-fill');
@@ -65,21 +66,21 @@ function renderScore(scan) {
     fill.style.strokeDashoffset = circ - (score / 100) * circ;
     fill.style.stroke = score >= 75 ? '#22c55e' : score >= 50 ? '#eab308' : '#ef4444';
   }
-
+ 
   const badge = document.getElementById('score-badge');
   if (badge) {
     if (score >= 85)      { badge.textContent = 'Excellent';             badge.style.cssText = 'background:#dcfce7;color:#166534'; }
     else if (score >= 65) { badge.textContent = 'Besoin d\'attention';   badge.style.cssText = 'background:#fef9c3;color:#854d0e'; }
     else                  { badge.textContent = 'Besoin d\'amélioration';badge.style.cssText = 'background:#fee2e2;color:#991b1b'; }
   }
-
+ 
   // Barres critiques/high/medium
   const pct = (n) => (total ? Math.round((n / total) * 100) : 0) + '%';
   set('cnt-c', crit); barWidth('bar-c', pct(crit));
   set('cnt-h', high); barWidth('bar-h', pct(high));
   set('cnt-m', med);  barWidth('bar-m', pct(med));
 }
-
+ 
 // ── Grille gravité ────────────────────────────────────────────
 function renderSeverityGrid(scan) {
   const vulns = scan.vulns || [];
@@ -88,7 +89,7 @@ function renderSeverityGrid(scan) {
   set('g-m', countBy(vulns, 'medium'));
   set('g-l', countBy(vulns, 'low'));
 }
-
+ 
 // ── Donut OWASP ───────────────────────────────────────────────
 function renderOwaspChart(scan) {
   const vulns   = scan.vulns || [];
@@ -97,21 +98,21 @@ function renderOwaspChart(scan) {
     const k = v.owaspLabel || v.owaspCategory || 'Inconnu';
     byOwasp[k] = (byOwasp[k] || 0) + 1;
   });
-
+ 
   const total   = vulns.length;
   const svg     = document.getElementById('owasp-svg');
   const legend  = document.getElementById('owasp-legend');
   set('owasp-total', total);
-
+ 
   if (!svg || !legend || total === 0) return;
-
+ 
   svg.querySelectorAll('.owasp-arc').forEach(e => e.remove());
-
+ 
   const COLORS  = ['#3b82f6','#22d3ee','#8b5cf6','#f97316','#ef4444','#22c55e','#eab308','#ec4899','#14b8a6','#a78bfa'];
   const entries = Object.entries(byOwasp).sort((a, b) => b[1] - a[1]);
   const circ    = 2 * Math.PI * 38;
   let   offset  = 0;
-
+ 
   entries.forEach(([label, count], i) => {
     const pct   = count / total;
     const color = COLORS[i % COLORS.length];
@@ -128,7 +129,7 @@ function renderOwaspChart(scan) {
     svg.insertBefore(arc, document.getElementById('owasp-cover'));
     offset += pct;
   });
-
+ 
   legend.innerHTML = entries.map(([label, count], i) => `
     <div style="display:flex;align-items:center;gap:6px;font-size:0.72rem;color:#4a5568;margin-bottom:5px;">
       <span style="width:10px;height:10px;border-radius:2px;background:${COLORS[i % COLORS.length]};flex-shrink:0;"></span>
@@ -136,7 +137,7 @@ function renderOwaspChart(scan) {
       <b>${count}</b>
     </div>`).join('');
 }
-
+ 
 // ── Tableau vulnérabilités ────────────────────────────────────
 function renderVulnTable(vulns) {
   allVulns = vulns;
@@ -148,7 +149,7 @@ function renderVulnTable(vulns) {
   }
   drawTable(vulns);
 }
-
+ 
 function drawTable(vulns) {
   const tbody = document.getElementById('vuln-tbody');
   if (!tbody) return;
@@ -172,7 +173,7 @@ function drawTable(vulns) {
     </tr>`;
   }).join('');
 }
-
+ 
 function filterTable() {
   const ff = (document.getElementById('ff')?.value || '').toLowerCase();
   const fs = (document.getElementById('fs')?.value || '').toLowerCase();
@@ -183,7 +184,7 @@ function filterTable() {
     (!fo || (v.owaspCategory || '').toLowerCase().includes(fo) || (v.owaspLabel || '').toLowerCase().includes(fo))
   ));
 }
-
+ 
 // ── Appliquer un fix ──────────────────────────────────────────
 async function applyFix(vulnId, btn) {
   btn.disabled   = true;
@@ -208,7 +209,7 @@ async function applyFix(vulnId, btn) {
     btn.disabled    = false;
   }
 }
-
+ 
 // ── Sidebar stats ─────────────────────────────────────────────
 function renderSidebarStats(scan) {
   const vulns = scan.vulns || [];
@@ -219,7 +220,7 @@ function renderSidebarStats(scan) {
   set('sw-high',  countBy(vulns, 'high'));
   barWidth('sw-bar', score + '%');
 }
-
+ 
 // ── Notifications ─────────────────────────────────────────────
 async function loadNotifications() {
   try {
@@ -231,7 +232,7 @@ async function loadNotifications() {
     }
   } catch { /* silencieux */ }
 }
-
+ 
 // ── Helpers ───────────────────────────────────────────────────
 function computeScore(vulns) {
   if (!vulns.length) return 100;
@@ -252,7 +253,7 @@ function barWidth(id, w) {
   const el = document.getElementById(id);
   if (el) el.style.width = w;
 }
-
+ 
 function showEmpty() {
   const tbody = document.getElementById('vuln-tbody');
   if (tbody) tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:20px;color:#9aa3b5;">
@@ -261,8 +262,46 @@ function showEmpty() {
   ['score-val','g-c','g-h','g-m','g-l','owasp-total','cnt-c','cnt-h','cnt-m','sw-score','sw-total','sw-crit','sw-high']
     .forEach(id => set(id, '0'));
 }
-
+ 
 function showError(msg) {
   const tbody = document.getElementById('vuln-tbody');
   if (tbody) tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:20px;color:#ef4444;">Erreur : ${esc(msg)}</td></tr>`;
 }
+ 
+function bootstrapOAuthTokenFromUrl() {
+  const queryParams = new URLSearchParams(window.location.search);
+  const hashRaw = window.location.hash.startsWith('#') ? window.location.hash.slice(1) : '';
+  const hashParams = new URLSearchParams(hashRaw);
+ 
+  const tokenFromHash = (hashParams.get('token') || '').trim();
+  const tokenFromQuery = (queryParams.get('token') || '').trim();
+  const token = tokenFromHash || tokenFromQuery;
+ 
+  let changed = false;
+ 
+  if (token) {
+    // Cle utilisee partout dans api.js
+    saveToken(token);
+  }
+ 
+  if (tokenFromQuery) {
+    queryParams.delete('token');
+    changed = true;
+  }
+ 
+  if (tokenFromHash) {
+    hashParams.delete('token');
+    changed = true;
+  }
+ 
+  if (changed && window.history && window.history.replaceState) {
+    const query = queryParams.toString();
+    const hash = hashParams.toString();
+    const cleanUrl = window.location.pathname
+      + (query ? ('?' + query) : '')
+      + (hash ? ('#' + hash) : '');
+    window.history.replaceState({}, document.title, cleanUrl);
+  }
+}
+ 
+ 
