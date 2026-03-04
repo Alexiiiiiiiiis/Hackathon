@@ -312,14 +312,14 @@
   <div class="card">
 
     <!-- Brand -->
-    <div class="brand">
+    <a class="brand" href="index.html" style="text-decoration:none;">
       <div class="brand-icon">
         <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M12 2L4 6v6c0 5.25 3.5 10.15 8 11.5C16.5 22.15 20 17.25 20 12V6L12 2z"/>
         </svg>
       </div>
       <span class="brand-name">SecureScan</span>
-    </div>
+    </a>
 
     <h1 class="card-title">Connexion</h1>
 
@@ -419,7 +419,9 @@
         if (data.user) {
           sessionStorage.setItem('user', JSON.stringify(data.user));
         }
-        window.location.href = 'dashboard3.html';
+        const redirect = sessionStorage.getItem('redirect_after_login') || 'dashboard.html';
+        sessionStorage.removeItem('redirect_after_login');
+        window.location.href = redirect;
       } else {
         // ❌ Identifiants incorrects
         errorBox.textContent = data.message || 'Identifiants incorrects. Veuillez réessayer.';
@@ -430,7 +432,9 @@
     } catch (e) {
       // Backend non connecté → redirection de démo
       console.warn('[SecureScan] Backend non connecté, redirection de démo.');
-      window.location.href = 'dashboard3.html';
+      const redirect = sessionStorage.getItem('redirect_after_login') || 'dashboard.html';
+        sessionStorage.removeItem('redirect_after_login');
+        window.location.href = redirect;
     } finally {
       setLoading(false);
     }
