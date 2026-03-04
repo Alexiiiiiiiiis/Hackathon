@@ -6,7 +6,7 @@ const API_BASE = '/api';
 const ENDPOINTS = {
   status:  API_BASE + '/analyse/{id}/status', // GET → statut de l'analyse en cours
   cancel:  API_BASE + '/analyse/{id}/cancel', // POST → annuler l'analyse
-  result:  'dashboard.html',                  // Redirection vers le dashboard après analyse
+  result:  'correction.html?id=' + getAnalysisId(),                  // Redirection vers le dashboard après analyse
 };
 
 // ============================================================
