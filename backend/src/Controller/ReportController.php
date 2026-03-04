@@ -10,6 +10,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 
 #[Route('/api/report')]
+// Route rapport: generation HTML par projet
 class ReportController extends AbstractController
 {
     #[Route('/{id}', methods: ['GET'])]
@@ -100,60 +101,60 @@ class ReportController extends AbstractController
 
         return sprintf(
             '<!doctype html>
-<html lang="fr">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Rapport SecureScan - Projet %d</title>
-  <style>
-    body { font-family: Arial, sans-serif; margin: 24px; color: #1f2937; }
-    h1, h2 { margin: 0 0 12px; }
-    .meta { margin-bottom: 16px; }
-    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
-    .card { border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px; }
-    table { width: 100%%; border-collapse: collapse; margin-top: 12px; }
-    th, td { border: 1px solid #e5e7eb; padding: 8px; text-align: left; vertical-align: top; }
-    th { background: #f9fafb; }
-  </style>
-</head>
-<body>
-  <h1>Rapport de securite SecureScan</h1>
-  <div class="meta">
-    <div><strong>ID Projet :</strong> %d</div>
-    <div><strong>ID Scan :</strong> %s</div>
-    <div><strong>URL Git :</strong> %s</div>
-    <div><strong>Langage :</strong> %s</div>
-    <div><strong>Statut :</strong> %s</div>
-    <div><strong>Genere le :</strong> %s</div>
-    <div><strong>Total vulnerabilites :</strong> %d</div>
-  </div>
+            <html lang="fr">
+            <head>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <title>Rapport SecureScan - Projet %d</title>
+              <style>
+                body { font-family: Arial, sans-serif; margin: 24px; color: #1f2937; }
+                h1, h2 { margin: 0 0 12px; }
+                .meta { margin-bottom: 16px; }
+                .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+                .card { border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px; }
+                table { width: 100%%; border-collapse: collapse; margin-top: 12px; }
+                th, td { border: 1px solid #e5e7eb; padding: 8px; text-align: left; vertical-align: top; }
+                th { background: #f9fafb; }
+              </style>
+            </head>
+            <body>
+              <h1>Rapport de securite SecureScan</h1>
+              <div class="meta">
+                <div><strong>ID Projet :</strong> %d</div>
+                <div><strong>ID Scan :</strong> %s</div>
+                <div><strong>URL Git :</strong> %s</div>
+                <div><strong>Langage :</strong> %s</div>
+                <div><strong>Statut :</strong> %s</div>
+                <div><strong>Genere le :</strong> %s</div>
+                <div><strong>Total vulnerabilites :</strong> %d</div>
+              </div>
 
-  <div class="grid">
-    <div class="card">
-      <h2>Par severite</h2>
-      <ul>%s</ul>
-    </div>
-    <div class="card">
-      <h2>Par categorie OWASP</h2>
-      <ul>%s</ul>
-    </div>
-  </div>
+              <div class="grid">
+                <div class="card">
+                  <h2>Par severite</h2>
+                  <ul>%s</ul>
+                </div>
+                <div class="card">
+                  <h2>Par categorie OWASP</h2>
+                  <ul>%s</ul>
+                </div>
+              </div>
 
-  <h2>Vulnerabilites detectees</h2>
-  <table>
-    <thead>
-      <tr>
-        <th>ID</th>
-        <th>Outil</th>
-        <th>Severite</th>
-        <th>Emplacement</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>%s</tbody>
-  </table>
-</body>
-</html>',
+              <h2>Vulnerabilites detectees</h2>
+              <table>
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Outil</th>
+                    <th>Severite</th>
+                    <th>Emplacement</th>
+                    <th>Description</th>
+                  </tr>
+                </thead>
+                <tbody>%s</tbody>
+              </table>
+            </body>
+            </html>',
             $project->getId(),
             $project->getId(),
             htmlspecialchars((string) ($latestScan?->getId() ?? '-'), ENT_QUOTES, 'UTF-8'),

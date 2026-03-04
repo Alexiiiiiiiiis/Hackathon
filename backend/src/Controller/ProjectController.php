@@ -11,6 +11,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 
 #[Route('/api/projects', name: 'api_projects_')]
+// Routes projet: creation, liste, detail, suppression
 class ProjectController extends AbstractController
 {
     public function __construct(

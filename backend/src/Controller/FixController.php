@@ -10,6 +10,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 
 #[Route('/api/fix', name: 'api_fix_')]
+// Routes fix: generer, appliquer, rejeter
 class FixController extends AbstractController
 {
     public function __construct(
