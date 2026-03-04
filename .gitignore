@@ -1,13 +1,18 @@
-# Backend
-backend/vendor/
-backend/.env.local
-backend/var/
-backend/repos_clones/     ← les repos Git clonés temporairement
 
-# Frontend
-frontend/node_modules/
-frontend/dist/
+###> symfony/framework-bundle ###
+/.env.local
+/.env.local.php
+/.env.*.local
+/config/secrets/prod/prod.decrypt.private.php
+/public/bundles/
+/var/
+/vendor/
+/vendor/*
+###< symfony/framework-bundle ###
 
-# Divers
-.DS_Store
-*.log
+###> lexik/jwt-authentication-bundle ###
+/config/jwt/*.pem
+###< lexik/jwt-authentication-bundle ###
+/config/jwt/private.pem
+/config/jwt/public.pem
+.env.local

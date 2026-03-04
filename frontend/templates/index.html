@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SecureScan</title>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg-deep:     #09111f;
+      --bg-mid:      #0d1a32;
+      --border:      rgba(255,255,255,0.07);
+      --text-primary: #ddeaf8;
+      --text-muted:   #6a82a8;
+      --accent-blue:  #22d3ee;
+      --accent-pink:  #e879a0;
+      --accent-orange:#f59e6a;
+      --btn-bg:       #22d3ee;
+      --btn-text:     #05111f;
+    }
+
+    html, body {
+      height: 100%;
+      font-family: 'Sora', sans-serif;
+      background: var(--bg-deep);
+      color: var(--text-primary);
+      overflow-x: hidden;
+    }
+
+    /* ── Background ── */
+    body {
+      background:
+        radial-gradient(ellipse 70% 50% at 50% -10%, #0f2a55 0%, transparent 70%),
+        var(--bg-deep);
+      position: relative;
+    }
+
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background-image:
+        linear-gradient(rgba(34,211,238,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(34,211,238,0.03) 1px, transparent 1px);
+      background-size: 48px 48px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .blob {
+      position: fixed; border-radius: 50%;
+      filter: blur(100px); opacity: 0.12; pointer-events: none; z-index: 0;
+    }
+    .blob-1 { width: 500px; height: 500px; background: #1d4ed8; top: -150px; left: -100px; }
+    .blob-2 { width: 350px; height: 350px; background: #0891b2; bottom: -100px; right: -80px; }
+
+    /* ── Navbar ── */
+    nav {
+      position: relative; z-index: 10;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 18px 36px;
+    }
+
+    .nav-brand {
+      display: flex; align-items: center; gap: 9px;
+      font-size: 1rem; font-weight: 600; color: var(--text-primary);
+      text-decoration: none;
+    }
+
+    .nav-brand .shield-icon {
+      width: 22px; height: 22px;
+    }
+
+    .nav-brand .shield-icon path {
+      fill: none;
+      stroke: var(--accent-blue);
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .btn-connexion {
+      padding: 8px 22px;
+      background: transparent;
+      border: 2px solid var(--accent-blue);
+      border-radius: 8px;
+      color: var(--accent-blue);
+      font-family: 'Sora', sans-serif;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background 0.2s, color 0.2s;
+    }
+    .btn-connexion:hover {
+      background: var(--accent-blue);
+      color: var(--btn-text);
+    }
+
+    /* ── Hero ── */
+    .hero {
+      position: relative; z-index: 10;
+      text-align: center;
+      padding: 72px 24px 56px;
+      animation: fadeUp 0.7s cubic-bezier(0.16,1,0.3,1) both;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(28px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .hero h1 {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: clamp(1.8rem, 5vw, 2.8rem);
+      font-weight: 400;
+      color: var(--accent-blue);
+      letter-spacing: 0.01em;
+      line-height: 1.2;
+      margin-bottom: 24px;
+    }
+
+    .hero p {
+      max-width: 600px;
+      margin: 0 auto 40px;
+      font-size: 0.92rem;
+      line-height: 1.75;
+      color: var(--text-primary);
+      opacity: 0.85;
+    }
+
+    .btn-start {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 36px;
+      background: var(--accent-blue);
+      border: none;
+      border-radius: 10px;
+      color: var(--btn-text);
+      font-family: 'Sora', sans-serif;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      text-decoration: none;
+      letter-spacing: 0.02em;
+      transition: opacity 0.2s, transform 0.15s, box-shadow 0.2s;
+      box-shadow: 0 4px 24px rgba(34,211,238,0.35);
+    }
+    .btn-start:hover {
+      opacity: 0.9;
+      transform: translateY(-2px);
+      box-shadow: 0 8px 32px rgba(34,211,238,0.45);
+    }
+    .btn-start .arrow {
+      font-size: 1.1rem;
+      transition: transform 0.2s;
+    }
+    .btn-start:hover .arrow { transform: translateX(4px); }
+
+    /* ── Cards ── */
+    .cards {
+      position: relative; z-index: 10;
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      padding: 0 32px 60px;
+      flex-wrap: wrap;
+      animation: fadeUp 0.8s 0.15s cubic-bezier(0.16,1,0.3,1) both;
+    }
+
+    .card {
+      background: rgba(255,255,255,0.035);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 28px 24px 24px;
+      width: 220px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      transition: border-color 0.2s, transform 0.2s, background 0.2s;
+    }
+    .card:hover {
+      border-color: rgba(255,255,255,0.15);
+      background: rgba(255,255,255,0.055);
+      transform: translateY(-4px);
+    }
+
+    .card-icon {
+      width: 40px; height: 40px;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto;
+    }
+    .card-icon svg {
+      width: 36px; height: 36px;
+    }
+
+    /* Icon colors */
+    .icon-blue   { stroke: var(--accent-blue); }
+    .icon-pink   { stroke: var(--accent-pink); }
+    .icon-orange { stroke: var(--accent-orange); }
+
+    .card-title {
+      text-align: center;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .card-desc {
+      text-align: center;
+      font-size: 0.75rem;
+      line-height: 1.6;
+      color: var(--text-muted);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="blob blob-1"></div>
+  <div class="blob blob-2"></div>
+
+  <!-- Navbar -->
+  <nav>
+    <a href="#" class="nav-brand">
+      <svg class="shield-icon" viewBox="0 0 24 24">
+        <path d="M12 2L4 6v6c0 5.25 3.5 10.15 8 11.5C16.5 22.15 20 17.25 20 12V6L12 2z"/>
+      </svg>
+      SecureScan
+    </a>
+    <a href="login.html" class="btn-connexion">Connexion</a>
+  </nav>
+
+  <!-- Hero -->
+  <section class="hero">
+    <h1>Analyse et Sécurise ton code</h1>
+    <p>
+      Une analyse de sécurité basée sur l'IA qui détecte les vulnérabilités,
+      les mappe au OWASP Top 10, suggère des correctifs automatiques et
+      s'intègre directement à votre environnement Git
+    </p>
+    <a href="#" class="btn-start">
+      Commencer <span class="arrow">›</span>
+    </a>
+  </section>
+
+  <!-- Feature cards -->
+  <section class="cards">
+
+    <!-- Analyse automatisée -->
+    <div class="card">
+      <div class="card-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" class="icon-blue">
+          <path d="M9 3H5a2 2 0 0 0-2 2v4"/>
+          <path d="M15 3h4a2 2 0 0 1 2 2v4"/>
+          <path d="M9 21H5a2 2 0 0 1-2-2v-4"/>
+          <path d="M15 21h4a2 2 0 0 0 2-2v-4"/>
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M12 5v2M12 17v2M5 12H7M17 12h2"/>
+        </svg>
+      </div>
+      <div class="card-title">Analyse automatisée</div>
+      <div class="card-desc">[SAST, analyse des dépendances, détection des secrets et analyse de la qualité du code en un clic]</div>
+    </div>
+
+    <!-- Mapping OWASP -->
+    <div class="card">
+      <div class="card-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" class="icon-pink">
+          <path d="M12 2L4 6v6c0 5.25 3.5 10.15 8 11.5C16.5 22.15 20 17.25 20 12V6L12 2z"/>
+        </svg>
+      </div>
+      <div class="card-title">Mapping OWASP</div>
+      <div class="card-desc">Chaque vulnérabilité est associée au OWASP Top 10 2025 pour la conformité et le reporting</div>
+    </div>
+
+    <!-- Intégration Git -->
+    <div class="card">
+      <div class="card-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" class="icon-orange">
+          <rect x="5" y="2" width="14" height="20" rx="2"/>
+          <path d="M9 7h6M9 11h6M9 15h4"/>
+          <circle cx="16" cy="19" r="3" fill="none"/>
+          <path d="M16 18v2M15 19h2"/>
+        </svg>
+      </div>
+      <div class="card-title">Intégration Git</div>
+      <div class="card-desc">Correctifs automatiques envoyés directement vers votre dépôt avec des messages de commit détaillés</div>
+    </div>
+
+  </section>
+
+</body>
+</html>
