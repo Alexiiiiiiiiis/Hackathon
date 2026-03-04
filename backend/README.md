@@ -1,25 +1,25 @@
-# 🔧 SecureScan — Backend
+﻿# ðŸ”§ SecureScan â€” Backend
 
-API REST développée avec **Symfony 7** (PHP 8.2+). Elle orchestre les outils de sécurité, parse leurs résultats, effectue le mapping OWASP et gère l'intégration Git.
+API REST dÃ©veloppÃ©e avec **Symfony 7** (PHP 8.2+). Elle orchestre les outils de sÃ©curitÃ©, parse leurs rÃ©sultats, effectue le mapping OWASP et gÃ¨re l'intÃ©gration Git.
 
 ---
 
-## 📦 Stack technique
+## ðŸ“¦ Stack technique
 
 - **Framework** : Symfony 7
 - **Langage** : PHP 8.2
-- **Base de données** : MySQL / PostgreSQL (via Doctrine ORM)
-- **Outils de sécurité** : Semgrep, npm audit, TruffleHog (lancés via `symfony/process`)
+- **Base de donnÃ©es** : MySQL / PostgreSQL (via Doctrine ORM)
+- **Outils de sÃ©curitÃ©** : Semgrep, npm audit, TruffleHog (lancÃ©s via `symfony/process`)
 - **Git API** : Octokit (ou git CLI via `child_process`)
 - **CORS** : `nelmio/cors-bundle`
 
 ---
 
-## 🚀 Installation
+## ðŸš€ Installation
 
-### Prérequis
+### PrÃ©requis
 
-Vérifier que ces outils sont bien installés sur la machine :
+VÃ©rifier que ces outils sont bien installÃ©s sur la machine :
 
 ```bash
 php -v          # >= 8.2
@@ -45,7 +45,7 @@ GITHUB_TOKEN=ghp_xxxxxxxxxxxxxxxxxxxx
 CORS_ALLOW_ORIGIN=http://localhost:5173
 ```
 
-### Base de données
+### Base de donnÃ©es
 
 ```bash
 php bin/console doctrine:database:create
@@ -62,70 +62,76 @@ php -S localhost:8000 -t public/
 
 ---
 
-## 📁 Structure du projet
+## ðŸ“ Structure du projet
 
 ```
 src/
-├── Controller/
-│   ├── ProjectController.php     # POST /api/projects, GET /api/projects/{id}
-│   ├── ScanController.php        # POST /api/scan/{id}/launch
-│   └── FixController.php         # POST /api/fix/{id}/apply
-├── Entity/
-│   ├── Project.php               # id, gitUrl, language, status, createdAt
-│   ├── Vulnerability.php         # id, file, line, description, severity, owaspCategory
-│   ├── ScanResult.php            # id, project, tool, rawJson, createdAt
-│   └── Fix.php                   # id, vulnerability, suggestion, status
-└── Service/
-    ├── GitCloneService.php       # Clone le repo via symfony/process
-    ├── ScannerService.php        # Orchestre Semgrep / npm audit / TruffleHog
-    ├── ParserService.php         # Parse les JSON de sortie → Vulnerability
-    ├── OwaspMappingService.php   # Classe chaque vulnérabilité A01-A10
-    ├── FixService.php            # Templates de corrections automatisées
-    └── GitPushService.php        # Crée branche + applique fix + push GitHub
+â”œâ”€â”€ Controller/
+â”‚   â”œâ”€â”€ ProjectController.php     # POST /api/projects, GET /api/projects/{id}
+â”‚   â”œâ”€â”€ ScanController.php        # POST /api/scan/{id}/launch
+â”‚   â””â”€â”€ FixController.php         # POST /api/fix/{id}/apply
+â”œâ”€â”€ Entity/
+â”‚   â”œâ”€â”€ Project.php               # id, gitUrl, language, status, createdAt
+â”‚   â”œâ”€â”€ Vulnerability.php         # id, file, line, description, severity, owaspCategory
+â”‚   â”œâ”€â”€ ScanResult.php            # id, project, tool, rawJson, createdAt
+â”‚   â””â”€â”€ Fix.php                   # id, vulnerability, suggestion, status
+â””â”€â”€ Service/
+    â”œâ”€â”€ GitCloneService.php       # Clone le repo via symfony/process
+    â”œâ”€â”€ ScannerService.php        # Orchestre Semgrep / npm audit / TruffleHog
+    â”œâ”€â”€ ParserService.php         # Parse les JSON de sortie â†’ Vulnerability
+    â”œâ”€â”€ OwaspMappingService.php   # Classe chaque vulnÃ©rabilitÃ© A01-A10
+    â”œâ”€â”€ FixService.php            # Templates de corrections automatisÃ©es
+    â””â”€â”€ GitPushService.php        # CrÃ©e branche + applique fix + push GitHub
 ```
 
 ---
 
-## 🔌 Endpoints API
+## Endpoints API
 
-| Méthode | Route | Description |
+| Methode | Route | Description |
 |---------|-------|-------------|
-| `POST` | `/api/projects` | Soumettre un projet (URL Git ou ZIP) |
-| `GET` | `/api/projects/{id}` | Récupérer les infos d'un projet |
-| `POST` | `/api/scan/{id}/launch` | Lancer l'analyse de sécurité |
-| `GET` | `/api/scan/{id}/results` | Récupérer les vulnérabilités trouvées |
-| `GET` | `/api/scan/{id}/owasp` | Récupérer le mapping OWASP |
-| `POST` | `/api/fix/{vulnId}/apply` | Valider et appliquer une correction |
-| `POST` | `/api/fix/{vulnId}/reject` | Rejeter une correction proposée |
-| `GET` | `/api/report/{id}` | Générer le rapport HTML de sécurité |
+| `POST` | `/api/projects` | Creer un projet a scanner |
+| `GET` | `/api/projects` | Lister les projets |
+| `GET` | `/api/projects/{id}` | Recuperer les infos d un projet |
+| `DELETE` | `/api/projects/{id}` | Supprimer un projet |
+| `POST` | `/api/scan/project` | Creer un projet + lancer un scan direct |
+| `POST` | `/api/scan/{id}/launch` | Lancer l analyse de securite |
+| `GET` | `/api/scan/{id}` | Recuperer un scan (format principal) |
+| `GET` | `/api/scan/{id}/results` | Recuperer les vulnerabilites trouvees |
+| `GET` | `/api/scan/{id}/owasp` | Recuperer le mapping OWASP |
+| `GET` | `/api/scan/project/{projectId}/latest` | Recuperer le dernier scan d un projet |
+| `POST` | `/api/fix/generate/{vulnId}` | Generer une proposition de correction |
+| `POST` | `/api/fix/{id}/apply` | Appliquer une correction |
+| `POST` | `/api/fix/{id}/reject` | Rejeter une correction |
+| `GET` | `/api/notifications/count` | Compter les corrections en attente |
+| `GET` | `/api/report/{id}` | Generer le rapport HTML de securite |
 
 ---
-
-## 🛠️ Outils de sécurité intégrés
+## ðŸ› ï¸ Outils de sÃ©curitÃ© intÃ©grÃ©s
 
 ### Semgrep (SAST)
 ```bash
 semgrep --config=auto /path/to/repo --json
 ```
-Détecte : injections (A05), mauvaises pratiques de code (A06), mauvaises configurations (A02)
+DÃ©tecte : injections (A05), mauvaises pratiques de code (A06), mauvaises configurations (A02)
 
-### npm audit (Dépendances)
+### npm audit (DÃ©pendances)
 ```bash
 cd /path/to/repo && npm audit --json
 ```
-Détecte : dépendances avec CVE connues (A03)
+DÃ©tecte : dÃ©pendances avec CVE connues (A03)
 
 ### TruffleHog (Secrets)
 ```bash
 trufflehog filesystem /path/to/repo --json
 ```
-Détecte : clés API, tokens, mots de passe dans le code (A04, A02)
+DÃ©tecte : clÃ©s API, tokens, mots de passe dans le code (A04, A02)
 
 ---
 
-## 🗂️ Catégories OWASP couvertes
+## ðŸ—‚ï¸ CatÃ©gories OWASP couvertes
 
-| Code | Catégorie | Outil(s) |
+| Code | CatÃ©gorie | Outil(s) |
 |------|-----------|----------|
 | A02 | Security Misconfiguration | Semgrep, TruffleHog |
 | A03 | Software Supply Chain Failures | npm audit |
@@ -135,11 +141,11 @@ Détecte : clés API, tokens, mots de passe dans le code (A04, A02)
 
 ---
 
-## 🔗 Variables d'environnement
+## ðŸ”— Variables d'environnement
 
 | Variable | Description | Exemple |
 |----------|-------------|---------|
 | `DATABASE_URL` | URL de connexion BDD | `mysql://user:pass@localhost/securescan` |
 | `GITHUB_TOKEN` | Token GitHub pour push via API | `ghp_xxxx` |
-| `CORS_ALLOW_ORIGIN` | URL autorisée pour le frontend | `http://localhost:5173` |
+| `CORS_ALLOW_ORIGIN` | URL autorisÃ©e pour le frontend | `http://localhost:5173` |
 | `REPOS_CLONE_PATH` | Dossier de clonage temporaire | `/tmp/securescan_repos` |
