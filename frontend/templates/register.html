@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SecureScan – Inscription</title>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{
+      --blue:#22d3ee;--blue2:#3b82f6;--dark:#09111f;--card:#ffffff;
+      --text:#1a1f2e;--muted:#6b7280;--border:#e5e7eb;--input-bg:#f9fafb;
+      --focus:#3b82f6;
+    }
+    html,body{height:100%;font-family:'Sora',sans-serif;}
+
+    body{
+      display:flex;min-height:100vh;overflow-y:auto;
+      background:radial-gradient(ellipse 80% 60% at 30% 50%, #1a2d5a 0%, #09111f 70%);
+      position:relative;
+    }
+    body::before{
+      content:'';position:fixed;inset:0;
+      background-image:linear-gradient(rgba(34,211,238,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(34,211,238,.03) 1px,transparent 1px);
+      background-size:48px 48px;pointer-events:none;z-index:0;
+    }
+    .blob{position:fixed;border-radius:50%;filter:blur(90px);opacity:.15;pointer-events:none;z-index:0;}
+    .b1{width:500px;height:500px;background:#1d4ed8;top:-150px;left:-100px;}
+    .b2{width:300px;height:300px;background:#0891b2;bottom:-80px;left:200px;}
+
+    /* ── LEFT PANEL ── */
+    .left{
+      flex:0 0 42%;display:flex;flex-direction:column;justify-content:center;
+      padding:48px 52px;position:relative;z-index:2;
+    }
+    .left-brand{display:flex;align-items:center;gap:9px;margin-bottom:48px;}
+    .left-brand svg{width:22px;height:22px;stroke:#38bdf8;fill:rgba(56,189,248,.15);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+    .left-brand span{font-size:1rem;font-weight:600;color:#e8edf8;}
+
+    .left h1{font-size:1.75rem;font-weight:700;color:#f0f4ff;line-height:1.25;margin-bottom:8px;}
+    .left h1 .accent{color:var(--blue);display:block;}
+    .left p{font-size:0.82rem;color:#8a9ab8;line-height:1.7;max-width:320px;margin-bottom:32px;}
+
+    .features{display:flex;flex-direction:column;gap:12px;}
+    .feat{display:flex;align-items:center;gap:10px;font-size:0.8rem;color:#b8c8e0;}
+    .feat-check{
+      width:20px;height:20px;border-radius:50%;background:rgba(34,197,94,.15);
+      display:flex;align-items:center;justify-content:center;flex-shrink:0;
+    }
+    .feat-check svg{width:11px;height:11px;stroke:#22c55e;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;}
+
+    /* ── RIGHT PANEL (card) ── */
+    .right{
+      flex:1;display:flex;align-items:flex-start;justify-content:center;
+      padding:24px;position:relative;z-index:2;min-height:100%;
+    }
+    .card{
+      background:#fff;border-radius:16px;width:100%;max-width:420px;
+      padding:28px 32px 24px;
+      box-shadow:0 24px 64px rgba(0,0,0,.25),0 4px 16px rgba(0,0,0,.15);
+      animation:fadeUp .5s cubic-bezier(.16,1,.3,1) both;
+    }
+    @keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+
+    .card-title{font-size:1.15rem;font-weight:700;color:var(--text);margin-bottom:16px;}
+
+    /* Form */
+    .form-group{margin-bottom:10px;}
+    label{display:block;font-size:0.74rem;font-weight:500;color:var(--muted);margin-bottom:5px;}
+    .input-wrap{position:relative;display:flex;align-items:center;}
+    .input-icon{position:absolute;left:11px;display:flex;align-items:center;pointer-events:none;opacity:.4;}
+    .input-icon svg{width:14px;height:14px;stroke:var(--text);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+    input[type=text],input[type=email],input[type=password]{
+      width:100%;padding:9px 12px 9px 34px;
+      background:var(--input-bg);border:1px solid var(--border);border-radius:8px;
+      font-family:'Sora',sans-serif;font-size:0.8rem;color:var(--text);
+      outline:none;transition:border-color .2s,box-shadow .2s,background .2s;
+    }
+    input::placeholder{color:#c0c8d8;}
+    input:focus{border-color:var(--focus);background:#fff;box-shadow:0 0 0 3px rgba(59,130,246,.12);}
+    input.error{border-color:#ef4444;}
+
+    .hint{font-size:0.67rem;color:#9ca3af;margin-top:4px;line-height:1.5;}
+    .err-msg{font-size:0.67rem;color:#ef4444;margin-top:3px;display:none;}
+
+    /* CGU */
+    .cgu{font-size:0.72rem;color:var(--muted);margin:16px 0 14px;line-height:1.6;}
+    .cgu a{color:var(--blue2);text-decoration:none;font-weight:500;}
+    .cgu a:hover{text-decoration:underline;}
+
+    /* Submit */
+    .btn-submit{
+      width:100%;padding:11px;display:flex;align-items:center;justify-content:center;gap:8px;
+      background:var(--blue);border:none;border-radius:9px;
+      color:#fff;font-family:'Sora',sans-serif;font-size:0.88rem;font-weight:700;
+      cursor:pointer;letter-spacing:.02em;
+      transition:opacity .2s,transform .15s,box-shadow .2s;
+      box-shadow:0 4px 18px rgba(34,211,238,.35);
+    }
+    .btn-submit:hover{opacity:.9;transform:translateY(-1px);box-shadow:0 6px 24px rgba(34,211,238,.45);}
+    .btn-submit:active{transform:translateY(0);}
+    .btn-submit svg{width:16px;height:16px;stroke:#fff;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;}
+
+    /* Divider */
+    .divider{display:flex;align-items:center;gap:10px;margin:14px 0;font-size:0.72rem;color:#c0c8d8;}
+    .divider::before,.divider::after{content:'';flex:1;height:1px;background:#e5e7eb;}
+
+    /* OAuth buttons */
+    .oauth-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}
+    .btn-oauth{
+      padding:9px 12px;display:flex;align-items:center;justify-content:center;gap:7px;
+      border-radius:8px;font-family:'Sora',sans-serif;font-size:0.78rem;font-weight:600;
+      cursor:pointer;transition:opacity .2s,transform .15s;text-decoration:none;
+    }
+    .btn-oauth:hover{opacity:.85;transform:translateY(-1px);}
+    .btn-google{background:#fff;border:1.5px solid var(--border);color:var(--text);}
+    .btn-github{background:#1a1f2e;border:1.5px solid #1a1f2e;color:#fff;}
+    .btn-oauth svg{width:16px;height:16px;flex-shrink:0;}
+
+    /* Login link */
+    .login-link{text-align:center;font-size:0.74rem;color:var(--muted);}
+    .login-link a{color:var(--blue2);text-decoration:none;font-weight:600;}
+    .login-link a:hover{text-decoration:underline;}
+
+    /* Loading spinner */
+    .spinner{display:none;width:16px;height:16px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;}
+    @keyframes spin{to{transform:rotate(360deg)}}
+  </style>
+</head>
+<body>
+  <div class="blob b1"></div>
+  <div class="blob b2"></div>
+
+  <!-- LEFT -->
+  <div class="left">
+    <div class="left-brand">
+      <svg viewBox="0 0 24 24"><path d="M12 2L4 6v6c0 5.25 3.5 10.15 8 11.5C16.5 22.15 20 17.25 20 12V6L12 2z"/></svg>
+      <span>SecureScan</span>
+    </div>
+    <h1>
+      Commence a sécuriser
+      <span class="accent">Ton code dès MAINTENANT</span>
+    </h1>
+    <p>Rejoignez des milliers de développeurs qui utilisent une analyse de sécurité basée sur l'intelligence artificielle pour protéger leurs applications.</p>
+    <div class="features">
+      <div class="feat"><div class="feat-check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>Détection automatisée des vulnérabilités</div>
+      <div class="feat"><div class="feat-check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>Conformité OWASP Top 10 2025</div>
+      <div class="feat"><div class="feat-check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>Corrections basées sur l'IA</div>
+      <div class="feat"><div class="feat-check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>Intégration fluide avec Git</div>
+    </div>
+  </div>
+
+  <!-- RIGHT -->
+  <div class="right">
+    <div class="card">
+      <h2 class="card-title">Créez votre compte</h2>
+
+      <div id="global-error" style="display:none;background:#fee2e2;border:1px solid #fca5a5;border-radius:8px;padding:10px 12px;font-size:0.75rem;color:#991b1b;margin-bottom:14px;"></div>
+
+      <!-- Nom complet -->
+      <div class="form-group">
+        <label for="fullname">Nom complet</label>
+        <div class="input-wrap">
+          <span class="input-icon"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
+          <input type="text" id="fullname" placeholder="Emilie Kim" autocomplete="name"/>
+        </div>
+        <div class="err-msg" id="err-fullname">Veuillez entrer votre nom complet.</div>
+      </div>
+
+      <!-- Email -->
+      <div class="form-group">
+        <label for="email">Adresse e-mail</label>
+        <div class="input-wrap">
+          <span class="input-icon"><svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M2 7l10 7 10-7"/></svg></span>
+          <input type="email" id="email" placeholder="emiliekk@company.com" autocomplete="email"/>
+        </div>
+        <div class="err-msg" id="err-email">Adresse e-mail invalide.</div>
+      </div>
+
+      <!-- Entreprise -->
+      <div class="form-group">
+        <label for="company">Nom de l'entreprise</label>
+        <div class="input-wrap">
+          <span class="input-icon"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></span>
+          <input type="text" id="company" placeholder="entreprise ltd." autocomplete="organization"/>
+        </div>
+      </div>
+
+      <!-- Mot de passe -->
+      <div class="form-group">
+        <label for="password">Mot de passe</label>
+        <div class="input-wrap">
+          <span class="input-icon"><svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
+          <input type="password" id="password" placeholder="••••••••" autocomplete="new-password"/>
+        </div>
+        <div class="hint">Le mot de passe doit contenir au minimum 8 caractères, incluant des majuscules, des minuscules et des chiffres.</div>
+        <div class="err-msg" id="err-password">Mot de passe trop faible (min. 8 caractères, maj., min., chiffre).</div>
+      </div>
+
+      <!-- Confirmer -->
+      <div class="form-group">
+        <label for="confirm">Confirme ton mot de passe</label>
+        <div class="input-wrap">
+          <span class="input-icon"><svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
+          <input type="password" id="confirm" placeholder="••••••••" autocomplete="new-password"/>
+        </div>
+        <div class="err-msg" id="err-confirm">Les mots de passe ne correspondent pas.</div>
+      </div>
+
+      <!-- CGU -->
+      <p class="cgu">J'accepte les <a href="#">Conditions d'utilisation</a> et <a href="#">Politique de confidentialité</a></p>
+
+      <!-- Submit -->
+      <button class="btn-submit" id="btn-submit" onclick="handleRegister()">
+        <span id="btn-text">Créer mon compte</span>
+        <svg id="btn-arrow" viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        <div class="spinner" id="btn-spinner"></div>
+      </button>
+
+      <!-- Divider -->
+      <div class="divider">Ou continuer avec</div>
+
+      <!-- OAuth -->
+      <div class="oauth-row">
+        <a class="btn-oauth btn-google" href="#" onclick="handleOAuth('google')">
+          <svg viewBox="0 0 24 24" fill="none">
+            <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+            <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+            <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/>
+            <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+          </svg>
+          Google
+        </a>
+        <a class="btn-oauth btn-github" href="#" onclick="handleOAuth('github')">
+          <svg viewBox="0 0 24 24" fill="white">
+            <path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0 1 12 6.844a9.59 9.59 0 0 1 2.504.337c1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.02 10.02 0 0 0 22 12.017C22 6.484 17.522 2 12 2z"/>
+          </svg>
+          GitHub
+        </a>
+      </div>
+
+      <!-- Login link -->
+      <p class="login-link">Avez vous déjà un compte ? <a href="login.html">Connectez-vous</a></p>
+    </div>
+  </div>
+
+<script>
+  // ============================================================
+  // CONFIG API
+  // ↓ Remplacez par l'URL de base de votre backend Symfony
+  // ============================================================
+  const API_BASE = '/api';
+  const ENDPOINTS = {
+    register: API_BASE + '/register',       // POST → { fullname, email, company, password }
+    oauthGoogle: API_BASE + '/auth/google', // GET  → redirect OAuth Google
+    oauthGithub: API_BASE + '/auth/github', // GET  → redirect OAuth GitHub
+  };
+
+  // ============================================================
+  // VALIDATION
+  // ============================================================
+  function validateEmail(v){ return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v); }
+  function validatePassword(v){ return /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/.test(v); }
+
+  function setError(id, show){
+    const el = document.getElementById('err-'+id);
+    const inp = document.getElementById(id);
+    if(!el||!inp) return;
+    el.style.display = show ? 'block' : 'none';
+    inp.classList.toggle('error', show);
+  }
+
+  function clearErrors(){
+    ['fullname','email','password','confirm'].forEach(f => setError(f, false));
+    document.getElementById('global-error').style.display = 'none';
+  }
+
+  function showGlobalError(msg){
+    const el = document.getElementById('global-error');
+    el.textContent = msg;
+    el.style.display = 'block';
+  }
+
+  function setLoading(on){
+    document.getElementById('btn-text').style.display = on ? 'none' : 'inline';
+    document.getElementById('btn-arrow').style.display = on ? 'none' : 'block';
+    document.getElementById('btn-spinner').style.display = on ? 'block' : 'none';
+    document.getElementById('btn-submit').disabled = on;
+  }
+
+  // ============================================================
+  // INSCRIPTION
+  // ============================================================
+  async function handleRegister(){
+    clearErrors();
+
+    const fullname = document.getElementById('fullname').value.trim();
+    const email    = document.getElementById('email').value.trim();
+    const company  = document.getElementById('company').value.trim();
+    const password = document.getElementById('password').value;
+    const confirm  = document.getElementById('confirm').value;
+
+    // Validation côté client
+    let hasError = false;
+    if(!fullname)              { setError('fullname', true); hasError = true; }
+    if(!validateEmail(email))  { setError('email', true);    hasError = true; }
+    if(!validatePassword(password)) { setError('password', true); hasError = true; }
+    if(password !== confirm)   { setError('confirm', true);  hasError = true; }
+    if(hasError) return;
+
+    setLoading(true);
+
+    try {
+      const res = await fetch(ENDPOINTS.register, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fullname, email, company, password })
+      });
+
+      const data = await res.json().catch(() => ({}));
+
+      if(res.ok){
+        // ✅ Succès → redirection vers le dashboard
+        window.location.href = 'dashboard3.html';
+      } else {
+        // ❌ Erreur serveur (ex: email déjà utilisé)
+        showGlobalError(data.message || 'Une erreur est survenue. Veuillez réessayer.');
+      }
+    } catch(e) {
+      // Backend non connecté → redirection directe pour démo
+      console.warn('[SecureScan] Backend non connecté, redirection de démo.');
+      window.location.href = 'dashboard3.html';
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  // ============================================================
+  // OAUTH (Google / GitHub)
+  // ============================================================
+  function handleOAuth(provider){
+    const url = provider === 'google' ? ENDPOINTS.oauthGoogle : ENDPOINTS.oauthGithub;
+    try {
+      window.location.href = url;
+    } catch(e) {
+      console.warn('[SecureScan] OAuth non configuré.');
+      alert('OAuth '+provider+' non encore configuré (backend non connecté).');
+    }
+  }
+
+  // Soumission via Entrée
+  document.addEventListener('keydown', e => {
+    if(e.key === 'Enter') handleRegister();
+  });
+</script>
+</body>
+</html>

@@ -1,16 +1,3 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>frontend</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
-</html>
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -309,6 +296,11 @@
       transition: opacity 0.2s;
     }
     .register a:hover { opacity: 0.75; }
+
+    .spinner{display:none;width:15px;height:15px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;margin:0 auto;}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .error-box{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:8px;padding:9px 12px;font-size:0.73rem;color:#fca5a5;margin-bottom:14px;display:none;}
+    input.error{border-color:#ef4444 !important;}
   </style>
 </head>
 <body>
@@ -365,13 +357,95 @@
       <a href="#" class="forgot">Mot de passe oublié ?</a>
     </div>
 
-    <button class="btn-login">Connexion</button>
+    <div class="error-box" id="login-error"></div><button class="btn-login" id="btn-login" onclick="handleLogin()"><span id="btn-text">Connexion</span><div class="spinner" id="btn-spinner"></div></button>
 
     <p class="register">
-      Pas de compte ? <a href="#">Inscris-toi !</a>
+      Pas de compte ? <a href="register.html">Inscris-toi !</a>
     </p>
 
   </div>
 
+
+<script>
+  // ============================================================
+  // CONFIG API
+  // Remplacez par l'URL de votre backend Symfony
+  // ============================================================
+  const API_BASE = '/api';
+  const ENDPOINTS = {
+    login: API_BASE + '/login', // POST → { email, password }
+                                // Réponse attendue : { token, user: { name, email } }
+                                // ou { message: "Identifiants incorrects" }
+  };
+
+  // ============================================================
+  // CONNEXION
+  // ============================================================
+  async function handleLogin() {
+    const email    = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
+    const errorBox = document.getElementById('login-error');
+
+    // Reset erreurs
+    errorBox.style.display = 'none';
+    document.getElementById('email').classList.remove('error');
+    document.getElementById('password').classList.remove('error');
+
+    // Validation basique
+    if (!email || !password) {
+      errorBox.textContent = 'Veuillez remplir tous les champs.';
+      errorBox.style.display = 'block';
+      if (!email) document.getElementById('email').classList.add('error');
+      if (!password) document.getElementById('password').classList.add('error');
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const res = await fetch(ENDPOINTS.login, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+
+      const data = await res.json().catch(() => ({}));
+
+      if (res.ok) {
+        // ✅ Succès : stocker le token et rediriger
+        if (data.token) {
+          sessionStorage.setItem('auth_token', data.token);
+        }
+        if (data.user) {
+          sessionStorage.setItem('user', JSON.stringify(data.user));
+        }
+        window.location.href = 'dashboard3.html';
+      } else {
+        // ❌ Identifiants incorrects
+        errorBox.textContent = data.message || 'Identifiants incorrects. Veuillez réessayer.';
+        errorBox.style.display = 'block';
+        document.getElementById('email').classList.add('error');
+        document.getElementById('password').classList.add('error');
+      }
+    } catch (e) {
+      // Backend non connecté → redirection de démo
+      console.warn('[SecureScan] Backend non connecté, redirection de démo.');
+      window.location.href = 'dashboard3.html';
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function setLoading(on) {
+    document.getElementById('btn-text').style.display = on ? 'none' : 'inline';
+    document.getElementById('btn-spinner').style.display = on ? 'block' : 'none';
+    document.getElementById('btn-login').disabled = on;
+  }
+
+  // Soumission via touche Entrée
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Enter') handleLogin();
+  });
+</script>
 </body>
 </html>
