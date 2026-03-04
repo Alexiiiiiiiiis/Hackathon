@@ -4,7 +4,19 @@
  *  Changez API_BASE_URL si votre backend tourne ailleurs
  * ============================================================
  */
-const API_BASE_URL = 'https://127.0.0.1:8000';
+const API_BASE_URL = resolveApiBaseUrl();
+
+function resolveApiBaseUrl() {
+  if (window.__API_BASE__) {
+    return String(window.__API_BASE__).replace(/\/$/, '');
+  }
+
+  if (window.location.protocol === 'file:') {
+    return 'http://127.0.0.1:8000';
+  }
+
+  return `${window.location.protocol}//${window.location.hostname}:8000`;
+}
 
 // ── Stockage JWT ──────────────────────────────────────────────
 function getToken()   { return localStorage.getItem('ss_token'); }

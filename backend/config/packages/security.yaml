@@ -36,4 +36,6 @@ security:
     access_control:
         - { path: ^/api/auth/login,    roles: PUBLIC_ACCESS }
         - { path: ^/api/auth/register, roles: PUBLIC_ACCESS }
+        - { path: ^/api/auth/github, roles: PUBLIC_ACCESS }
+        - { path: ^/api/auth/github/callback, roles: PUBLIC_ACCESS }
         - { path: ^/api,               roles: IS_AUTHENTICATED_FULLY }
