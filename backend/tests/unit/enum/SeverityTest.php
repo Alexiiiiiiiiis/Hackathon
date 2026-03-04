@@ -13,6 +13,7 @@ class SeverityTest extends TestCase
      * 
      * @dataProvider fromToolLevelProvider - Fournit les cas de test pour chaque mapping
      */
+    #[\PHPUnit\Framework\Attributes\DataProvider('fromToolLevelProvider')]
     public function testFromToolLevel(string $input, Severity $expected): void
     {
         $this->assertSame($expected, Severity::fromToolLevel($input));
