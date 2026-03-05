@@ -6,6 +6,7 @@ use App\Entity\Project;
 use App\Entity\ScanResult;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 
@@ -14,18 +15,34 @@ use Symfony\Component\Routing\Attribute\Route;
 class ReportController extends AbstractController
 {
     #[Route('/{id}', methods: ['GET'])]
-    public function generate(int $id, EntityManagerInterface $em): Response
+    public function generate(int $id, Request $request, EntityManagerInterface $em): Response
     {
         $project = $em->getRepository(Project::class)->find($id);
         if (!$project) {
             return new Response('<h1>Projet introuvable</h1>', 404, ['Content-Type' => 'text/html; charset=UTF-8']);
         }
 
-        /** @var ScanResult[] $scans */
-        $scans = $project->getScanResults()->toArray();
-        usort($scans, static fn(ScanResult $a, ScanResult $b): int => $b->getStartedAt() <=> $a->getStartedAt());
-        $latestScan = $scans[0] ?? null;
-        $vulnerabilities = $latestScan ? $latestScan->getVulnerabilities()->toArray() : [];
+        $scanId = (int) $request->query->get('scan_id', 0);
+        $download = $request->query->getBoolean('download', false);
+        $format = strtolower((string) $request->query->get('format', 'html'));
+        $requestedFormat = in_array($format, ['html', 'pdf'], true) ? $format : 'html';
+
+        $selectedScan = null;
+        if ($scanId > 0) {
+            $scan = $em->getRepository(ScanResult::class)->find($scanId);
+            if ($scan instanceof ScanResult && $scan->getProject()?->getId() === $project->getId()) {
+                $selectedScan = $scan;
+            }
+        }
+
+        if (!$selectedScan) {
+            /** @var ScanResult[] $scans */
+            $scans = $project->getScanResults()->toArray();
+            usort($scans, static fn(ScanResult $a, ScanResult $b): int => $b->getStartedAt() <=> $a->getStartedAt());
+            $selectedScan = $scans[0] ?? null;
+        }
+
+        $vulnerabilities = $selectedScan ? $selectedScan->getVulnerabilities()->toArray() : [];
 
         $bySeverity = ['critical' => 0, 'high' => 0, 'medium' => 0, 'low' => 0, 'info' => 0, 'unknown' => 0];
         $byOwasp = [];
@@ -43,9 +60,18 @@ class ReportController extends AbstractController
 
         ksort($byOwasp);
 
-        $html = $this->renderReportHtml($project, $latestScan, $vulnerabilities, $bySeverity, $byOwasp);
+        $html = $this->renderReportHtml($project, $selectedScan, $vulnerabilities, $bySeverity, $byOwasp);
 
-        return new Response($html, 200, ['Content-Type' => 'text/html; charset=UTF-8']);
+        $headers = ['Content-Type' => 'text/html; charset=UTF-8'];
+        if ($download) {
+            $baseName = sprintf('rapport-securite-projet-%d', $project->getId());
+            // Fallback temporaire: la generation PDF n'est pas encore active.
+            $extension = 'html';
+            $headers['X-Report-Format'] = $requestedFormat === 'pdf' ? 'html-fallback' : 'html';
+            $headers['Content-Disposition'] = sprintf('attachment; filename="%s.%s"', $baseName, $extension);
+        }
+
+        return new Response($html, 200, $headers);
     }
 
     /**

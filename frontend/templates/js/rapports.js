@@ -17,6 +17,29 @@ const state = {
   debounceTimer: null,
 };
 
+function getApiBaseUrl() {
+  if (typeof API_BASE_URL === "string" && API_BASE_URL) return API_BASE_URL;
+  if (window.location.protocol === "file:") return "http://127.0.0.1:8000";
+  return `${window.location.protocol}//${window.location.hostname}:8000`;
+}
+
+function getAuthToken() {
+  if (typeof getToken === "function") return getToken();
+  return localStorage.getItem("ss_token");
+}
+
+function buildReportApiUrl(projectId, options = {}) {
+  const params = new URLSearchParams();
+
+  if (options.scanId) params.set("scan_id", String(options.scanId));
+  if (options.download) params.set("download", "1");
+  if (options.format) params.set("format", String(options.format));
+
+  const query = params.toString();
+  const suffix = query ? `?${query}` : "";
+  return `${getApiBaseUrl()}/api/report/${projectId}${suffix}`;
+}
+
 function canonicalType(value) {
   return String(value || "")
     .toLowerCase()
@@ -57,6 +80,16 @@ function escapeHtml(value) {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#39;");
+}
+
+function safeFilename(value) {
+  return String(value || "rapport-securite")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-zA-Z0-9._-]/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "")
+    .toLowerCase() || "rapport-securite";
 }
 
 function showTableMessage(message, color = "#64748b") {
@@ -104,6 +137,9 @@ function renderTable(items) {
     const typeClass = typeToPill(item.type);
     const date = escapeHtml(item.date || "—");
     const size = escapeHtml(item.size_label || "—");
+    const projectId = Number(item.project_id || 0);
+    const scanId = Number(item.scan_id || 0);
+    const canOpen = Number.isInteger(projectId) && projectId > 0;
 
     row.innerHTML = `
       <div>
@@ -114,18 +150,110 @@ function renderTable(items) {
       <div><span class="${typeClass}">${typeLabel}</span></div>
       <div class="date"><span class="cal">📅</span><span>${date}</span></div>
       <div class="size">${size}</div>
-      <div class="tcenter"><button class="pdf" type="button">PDF</button></div>
+      <div class="tcenter">
+        <button class="pdf report-view-btn" type="button"${canOpen ? "" : " disabled"}>Voir</button>
+        <button class="pdf report-pdf-btn" type="button" style="margin-left:6px;"${canOpen ? "" : " disabled"}>PDF</button>
+      </div>
     `;
 
-    const pdfBtn = row.querySelector(".pdf");
+    const viewBtn = row.querySelector(".report-view-btn");
+    if (viewBtn) {
+      viewBtn.addEventListener("click", () => {
+        if (!canOpen) return;
+        openReportPreview(projectId, scanId);
+      });
+    }
+
+    const pdfBtn = row.querySelector(".report-pdf-btn");
     if (pdfBtn) {
       pdfBtn.addEventListener("click", () => {
-        alert(`Telechargement: ${item.name || "Rapport"}`);
+        if (!canOpen) return;
+        downloadReportFile(projectId, scanId, item.name || "rapport-securite");
       });
     }
 
     elTable.appendChild(row);
   });
+}
+
+async function fetchReportResponse(projectId, options = {}) {
+  const token = getAuthToken();
+  if (!token) {
+    if (typeof Auth !== "undefined" && typeof Auth.logout === "function") {
+      Auth.logout();
+    }
+    throw new Error("Session expirée.");
+  }
+
+  const response = await fetch(buildReportApiUrl(projectId, options), {
+    method: "GET",
+    headers: {
+      Accept: "text/html,application/pdf,*/*",
+      Authorization: "Bearer " + token,
+    },
+  });
+
+  if (response.status === 401) {
+    if (typeof Auth !== "undefined" && typeof Auth.logout === "function") {
+      Auth.logout();
+    }
+    throw new Error("Session expirée.");
+  }
+
+  if (!response.ok) {
+    throw new Error("Erreur serveur (" + response.status + ")");
+  }
+
+  return response;
+}
+
+async function openReportPreview(projectId, scanId) {
+  const previewTab = window.open("about:blank", "_blank");
+  if (!previewTab) {
+    alert("Autorise les popups pour ouvrir le rapport.");
+    return;
+  }
+
+  try {
+    const response = await fetchReportResponse(projectId, {
+      scanId,
+      format: "html",
+    });
+    const html = await response.text();
+    previewTab.document.open();
+    previewTab.document.write(html);
+    previewTab.document.close();
+  } catch (error) {
+    previewTab.close();
+    alert(error?.message || "Impossible d'ouvrir le rapport.");
+  }
+}
+
+async function downloadReportFile(projectId, scanId, reportName) {
+  try {
+    const response = await fetchReportResponse(projectId, {
+      scanId,
+      format: "pdf",
+      download: true,
+    });
+
+    const contentType = String(response.headers.get("content-type") || "");
+    const isPdf = contentType.includes("application/pdf");
+    const ext = isPdf ? "pdf" : "html";
+    const fileName = `${safeFilename(reportName)}.${ext}`;
+
+    const blob = await response.blob();
+    const blobUrl = window.URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = blobUrl;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(blobUrl);
+  } catch (error) {
+    alert(error?.message || "Impossible de telecharger le rapport.");
+  }
 }
 
 function buildReportsPath(page = 1) {
