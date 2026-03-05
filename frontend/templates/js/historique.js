@@ -183,7 +183,6 @@ function renderTable(data) {
       <td>
         <div class="actions-cell">
           <a class="btn-voir" href="dashboard?scan=${scanId}">Voir</a>
-          <a class="btn-rapport" href="http://127.0.0.1:8000/api/report/${projectId}?format=pdf" target="_blank">Rapport</a>
         </div>
       </td>
     </tr>
@@ -282,4 +281,4 @@ async function init() {
   }
 }
 
-init();
+init(); 
