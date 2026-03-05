@@ -16,3 +16,4 @@
 /config/jwt/private.pem
 /config/jwt/public.pem
 .env.local.DS_Store
+.DS_Store
