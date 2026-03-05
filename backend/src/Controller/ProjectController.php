@@ -11,7 +11,6 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 
 #[Route('/api/projects', name: 'api_projects_')]
-// Routes projet: creation, liste, detail, suppression
 class ProjectController extends AbstractController
 {
     public function __construct(
@@ -33,7 +32,8 @@ class ProjectController extends AbstractController
             ->setName($data['name'] ?? $this->guessProjectName($source))
             ->setSource($source)
             ->setSourceType($data['sourceType'] ?? $this->guessSourceType($source))
-            ->setDetectedLanguage($data['language'] ?? null);
+            ->setDetectedLanguage($data['language'] ?? null)
+            ->setOwner($this->getUser());
 
         $this->em->persist($project);
         $this->em->flush();
@@ -50,7 +50,15 @@ class ProjectController extends AbstractController
     #[Route('', name: 'list', methods: ['GET'])]
     public function list(): JsonResponse
     {
-        return $this->json(array_map(fn(Project $p) => [
+        $user     = $this->getUser();
+        $projects = $this->repo->findAllWithLastScan();
+
+        // Filtrer par propriétaire — compatibilité avec anciens projets sans owner
+        $projects = array_filter($projects, function (Project $p) use ($user) {
+            return $p->getOwner() === null || $p->getOwner() === $user;
+        });
+
+        return $this->json(array_values(array_map(fn(Project $p) => [
             'id'               => $p->getId(),
             'name'             => $p->getName(),
             'gitUrl'           => $p->getSource(),
@@ -59,7 +67,7 @@ class ProjectController extends AbstractController
             'detectedLanguage' => $p->getDetectedLanguage(),
             'createdAt'        => $p->getCreatedAt()->format(\DATE_ATOM),
             'scansCount'       => $p->getScanResults()->count(),
-        ], $this->repo->findAllWithLastScan()));
+        ], $projects)));
     }
 
     #[Route('/{id}', name: 'show', methods: ['GET'])]
@@ -67,6 +75,12 @@ class ProjectController extends AbstractController
     {
         $p = $this->repo->find($id);
         if (!$p) return $this->json(['error' => 'Projet introuvable'], Response::HTTP_NOT_FOUND);
+
+        // Vérifier que le projet appartient à l'utilisateur connecté
+        if ($p->getOwner() !== null && $p->getOwner() !== $this->getUser()) {
+            return $this->json(['error' => 'Accès refusé'], Response::HTTP_FORBIDDEN);
+        }
+
         return $this->json([
             'id'               => $p->getId(),
             'name'             => $p->getName(),
@@ -84,6 +98,12 @@ class ProjectController extends AbstractController
     {
         $p = $this->repo->find($id);
         if (!$p) return $this->json(['error' => 'Projet introuvable'], Response::HTTP_NOT_FOUND);
+
+        // Vérifier que le projet appartient à l'utilisateur connecté
+        if ($p->getOwner() !== null && $p->getOwner() !== $this->getUser()) {
+            return $this->json(['error' => 'Accès refusé'], Response::HTTP_FORBIDDEN);
+        }
+
         if ($p->getLocalPath() && is_dir($p->getLocalPath())) {
             $this->removeDir($p->getLocalPath());
         }
@@ -106,13 +126,8 @@ class ProjectController extends AbstractController
 
     private function guessSourceType(string $source): string
     {
-        if (str_contains($source, 'github.com')) {
-            return 'github';
-        }
-        if (str_contains($source, 'gitlab.com')) {
-            return 'gitlab';
-        }
-
+        if (str_contains($source, 'github.com')) return 'github';
+        if (str_contains($source, 'gitlab.com')) return 'gitlab';
         return 'git';
     }
 
@@ -120,8 +135,7 @@ class ProjectController extends AbstractController
     {
         $clean = preg_replace('#\.git$#', '', trim($source));
         $parts = preg_split('#/#', (string) $clean);
-        $name = end($parts);
-
+        $name  = end($parts);
         return $name ?: 'Projet sans nom';
     }
 }

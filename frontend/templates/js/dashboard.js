@@ -21,6 +21,37 @@ function bindLogout() {
   );
 }
 
+// ── Normalisation scan ────────────────────────────────────────
+function normalizeScan(scan) {
+  if (!scan) return scan;
+
+  // Normalise les vulnérabilités : vulnerabilities → vulns
+  if (!scan.vulns && scan.vulnerabilities) {
+    scan.vulns = scan.vulnerabilities.map(v => ({
+      id:            v.id,
+      ruleId:        v.ruleId || v.rule_id,
+      message:       v.message || v.description,
+      severity:      (v.severity || 'info').toLowerCase(),
+      filePath:      v.filePath || v.file_path,
+      line:          v.line,
+      codeSnippet:   v.codeSnippet || v.code_snippet,
+      owaspCategory: v.owaspCategory || v.owasp_category,
+      owaspLabel:    v.owaspLabel   || v.owasp_label || v.owaspCategory || v.owasp_category,
+      toolSource:    v.toolSource   || v.tool_source,
+      fixStatus:     v.fixStatus    || v.fix_status,
+    }));
+  }
+  if (!scan.vulns) scan.vulns = [];
+
+  // Normalise le score
+  if (!scan.stats) {
+    const score = scan.globalScore ?? scan.global_score ?? computeScore(scan.vulns);
+    scan.stats = { score, globalScore: score };
+  }
+
+  return scan;
+}
+
 // ── Modal HTML ────────────────────────────────────────────────
 function injectModal() {
   if (document.getElementById('fix-modal')) return;
@@ -87,7 +118,6 @@ function openModal(vuln) {
   const m = document.getElementById('fix-modal');
   m.style.display = 'flex';
 
-  // Réinitialisation complète — chaque modal repart à zéro
   document.getElementById('modal-fix-section').style.display  = 'none';
   document.getElementById('modal-loading').style.display      = 'block';
   document.getElementById('modal-btn-apply').style.display    = 'none';
@@ -96,12 +126,10 @@ function openModal(vuln) {
   document.getElementById('modal-fix-content').textContent    = '';
   document.getElementById('modal-explanation').textContent    = '';
 
-  // Supprimer les messages succès/erreur des actions précédentes
   document.querySelectorAll('#modal-fix-section > div[style]').forEach(el => {
     const bg = el.getAttribute('style') || '';
     if (bg.includes('dcfce7') || bg.includes('fef2f2')) el.remove();
   });
-  // Réactiver le bouton Appliquer
   const applyBtn = document.getElementById('modal-btn-apply');
   applyBtn.textContent = '✓ Appliquer la correction';
   applyBtn.disabled    = false;
@@ -126,7 +154,6 @@ function openModal(vuln) {
 
 function closeModal() {
   document.getElementById('fix-modal').style.display = 'none';
-  // Réactiver le bouton précédent si l'action n'était pas terminée
   if (currentFixBtn && (currentFixBtn.textContent === '…' || currentFixBtn.disabled)) {
     currentFixBtn.textContent = 'Corriger';
     currentFixBtn.disabled    = false;
@@ -210,8 +237,8 @@ async function loadDashboard() {
 
     if (scanIdFromUrl) {
       try {
-        scan = await Scans.results(scanIdFromUrl);
-        window.history.replaceState({}, document.title, window.location.pathname);
+        scan = normalizeScan(await Scans.results(scanIdFromUrl));
+        // Ne pas effacer le ?scan= de l'URL pour pouvoir recharger
       } catch { /* fallback */ }
     }
 
@@ -219,25 +246,21 @@ async function loadDashboard() {
       const projects = await Projects.list();
       if (!projects || projects.length === 0) { showEmpty(); return; }
 
-      // Trier par ID décroissant pour avoir les projets les plus récents en premier
       projects.sort((a, b) => b.id - a.id);
 
       let fallback = null;
       for (const p of projects) {
         try {
-          const s = await Scans.latest(p.id);
+          const s = normalizeScan(await Scans.latest(p.id));
           if (!s) continue;
-          // Garder le premier scan comme fallback
           if (!fallback) fallback = s;
-          // Préférer un scan avec des vulnérabilités ou un score < 100
-          if ((s.vulns && s.vulns.length > 0) || (s.stats?.score ?? s.stats?.globalScore ?? 100) < 100) {
+          if ((s.vulns && s.vulns.length > 0) || (s.stats?.score ?? 100) < 100) {
             scan = s;
             break;
           }
         } catch { /* essayer le projet suivant */ }
       }
 
-      // Si aucun scan avec vulnérabilités trouvé, utiliser le fallback
       if (!scan) scan = fallback;
     }
 
@@ -250,7 +273,10 @@ async function loadDashboard() {
     renderSidebarStats(scan);
 
     const reportLink = document.getElementById('report-link');
-    if (reportLink && scan.id) reportLink.href = Reports.url(scan.id);
+    if (reportLink && scan.id) {
+      const projectId = scan.projectId || scan.project?.id || scan.project_id;
+      if (projectId) reportLink.href = `http://127.0.0.1:8000/api/report/${projectId}?format=pdf`;
+    }
 
   } catch (err) {
     console.error('[Dashboard]', err);
@@ -444,33 +470,22 @@ function bootstrapOAuthTokenFromUrl() {
   const hashRaw = window.location.hash.startsWith('#') ? window.location.hash.slice(1) : '';
   const hashParams = new URLSearchParams(hashRaw);
 
-  const tokenFromHash = (hashParams.get('token') || '').trim();
+  const tokenFromHash  = (hashParams.get('token')  || '').trim();
   const tokenFromQuery = (queryParams.get('token') || '').trim();
   const token = tokenFromHash || tokenFromQuery;
 
+  if (token) saveToken(token);
+
   let changed = false;
-
-  if (token) {
-    // Cle utilisee partout dans api.js
-    saveToken(token);
-  }
-
-  if (tokenFromQuery) {
-    queryParams.delete('token');
-    changed = true;
-  }
-
-  if (tokenFromHash) {
-    hashParams.delete('token');
-    changed = true;
-  }
+  if (tokenFromQuery) { queryParams.delete('token'); changed = true; }
+  if (tokenFromHash)  { hashParams.delete('token');  changed = true; }
 
   if (changed && window.history && window.history.replaceState) {
     const query = queryParams.toString();
-    const hash = hashParams.toString();
+    const hash  = hashParams.toString();
     const cleanUrl = window.location.pathname
       + (query ? ('?' + query) : '')
-      + (hash ? ('#' + hash) : '');
+      + (hash  ? ('#' + hash)  : '');
     window.history.replaceState({}, document.title, cleanUrl);
   }
 }

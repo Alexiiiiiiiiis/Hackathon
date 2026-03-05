@@ -199,41 +199,49 @@
 <script src="js/api.js"></script>
 <script src="js/nouvelle_analyse.js" type="module-helper" onload="void 0"></script>
 <script>
-  // Expose loadSidebarStats depuis nouvelle_analyse.js si pas encore chargé
-  // On réutilise la même logique ici directement pour éviter les dépendances circulaires
+  // Synchroniser les données de la sidebar avec les stats globales
   async function loadSidebarStats() {
     try {
-      const projects = await Projects.list();
-      if (!projects || projects.length === 0) return;
-
-      projects.sort((a, b) => b.id - a.id);
-
-      let scan = null;
-      let fallback = null;
-      for (const p of projects) {
-        try {
-          const s = await Scans.latest(p.id);
-          if (!s) continue;
-          if (!fallback) fallback = s;
-          if ((s.vulns && s.vulns.length > 0) || (s.stats?.score ?? s.stats?.globalScore ?? 100) < 100) {
-            scan = s;
-            break;
-          }
-        } catch { /* essayer suivant */ }
-      }
-      if (!scan) scan = fallback;
-      if (!scan) return;
-
-      const vulns = scan.vulns || [];
-      const P     = { critical:20, high:12, medium:7, low:3, info:1 };
-      const score = scan.stats?.score ?? scan.stats?.globalScore ?? Math.max(0, 100 - vulns.reduce((a, v) => a + (P[v.severity] || 1), 0));
-
+      // Utiliser les mêmes données que fetchStats() pour synchroniser
+      const response = await fetch('http://127.0.0.1:8000/api/history/stats', {
+        headers: {
+          'Accept': 'application/json',
+          'Authorization': 'Bearer ' + (localStorage.getItem('ss_token') || '')
+        }
+      });
+      
+      if (!response.ok) return;
+      
+      const data = await response.json();
+      
       const el = id => document.getElementById(id);
-      if (el('sw-score')) el('sw-score').textContent = score;
-      if (el('sw-bar'))   el('sw-bar').style.width    = score + '%';
-      if (el('sw-total')) el('sw-total').textContent  = vulns.length;
-      if (el('sw-crit'))  el('sw-crit').textContent   = vulns.filter(v => (v.severity || '').toLowerCase() === 'critical').length;
-      if (el('sw-high'))  el('sw-high').textContent   = vulns.filter(v => (v.severity || '').toLowerCase() === 'high').length;
+      
+      // Score moyen
+      if (el('sw-score')) {
+        const avgScore = data.average_score ?? data.score ?? 0;
+        el('sw-score').textContent = avgScore;
+      }
+      if (el('sw-bar')) {
+        const avgScore = data.average_score ?? data.score ?? 0;
+        el('sw-bar').style.width = avgScore + '%';
+      }
+      
+      // Total failles
+      if (el('sw-total')) {
+        const totalFailles = data.total_failles ?? 0;
+        el('sw-total').textContent = totalFailles;
+      }
+      
+      // Failles critiques
+      if (el('sw-crit')) {
+        el('sw-crit').textContent = data.critical ?? 0;
+      }
+      
+      // Failles élevées
+      if (el('sw-high')) {
+        el('sw-high').textContent = data.high ?? 0;
+      }
+      
     } catch { /* silencieux */ }
   }
 </script>

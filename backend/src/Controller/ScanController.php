@@ -40,9 +40,10 @@ class ScanController extends AbstractController
         $project = (new Project())
             ->setName($data['name'] ?? 'Projet sans nom')
             ->setSource($gitUrl)
-            ->setSourceType($data['sourceType'] ?? 'github')
+            ->setSourceType($data['sourceType'] ?? $this->guessSourceType($gitUrl))
             ->setLocalPath(null)
-            ->setDetectedLanguage(null);
+            ->setDetectedLanguage(null)
+            ->setOwner($this->getUser()); // ← FIX: associer l'utilisateur connecté
 
         $this->em->persist($project);
         $this->em->flush();
@@ -160,5 +161,12 @@ class ScanController extends AbstractController
         }
 
         return $this->results((int) $latest->getId());
+    }
+
+    private function guessSourceType(string $source): string
+    {
+        if (str_contains($source, 'github.com')) return 'github';
+        if (str_contains($source, 'gitlab.com')) return 'gitlab';
+        return 'git';
     }
 }

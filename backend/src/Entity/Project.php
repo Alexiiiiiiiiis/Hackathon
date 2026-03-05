@@ -33,6 +33,10 @@ class Project
     #[ORM\Column]
     private \DateTimeImmutable $createdAt;
 
+    #[ORM\ManyToOne(targetEntity: User::class)]
+    #[ORM\JoinColumn(nullable: true)]
+    private ?User $owner = null;
+
     #[ORM\OneToMany(targetEntity: ScanResult::class, mappedBy: 'project', cascade: ['persist', 'remove'])]
     private Collection $scanResults;
 
@@ -60,6 +64,9 @@ class Project
     public function setDetectedLanguage(?string $l): self { $this->detectedLanguage = $l; return $this; }
 
     public function getCreatedAt(): \DateTimeImmutable { return $this->createdAt; }
+
+    public function getOwner(): ?User { return $this->owner; }
+    public function setOwner(?User $u): self { $this->owner = $u; return $this; }
 
     public function getScanResults(): Collection { return $this->scanResults; }
 }

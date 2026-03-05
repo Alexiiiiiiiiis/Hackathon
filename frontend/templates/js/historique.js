@@ -182,8 +182,8 @@ function renderTable(data) {
       <td><span class="failles">${failles} problemes</span></td>
       <td>
         <div class="actions-cell">
-          <a class="btn-voir" href="dashboard.html?id=${scanId}">Voir</a>
-          <a class="btn-rapport" href="/api/report/${projectId}?format=pdf" target="_blank">Rapport</a>
+          <a class="btn-voir" href="dashboard?scan=${scanId}">Voir</a>
+          <a class="btn-rapport" href="http://127.0.0.1:8000/api/report/${projectId}?format=pdf" target="_blank">Rapport</a>
         </div>
       </td>
     </tr>
@@ -271,7 +271,7 @@ async function init() {
     const stats = await fetchStats();
     renderStats(stats);
   } catch (e) {
-    renderStatsUnavailable();
+    renderStatsUnavailable(); // silencieux si stats indisponibles
   }
 
   try {
