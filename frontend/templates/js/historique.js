@@ -1,10 +1,10 @@
-// ============================================================
+ï»¿// ============================================================
 // CONFIG API
 // ============================================================
 const API_BASE = '/api';
 const ENDPOINTS = {
   history: API_BASE + '/history',
-  stats: API_BASE + '/dashboard',
+  stats: API_BASE + '/history/stats',
 };
 
 // Etat
@@ -84,16 +84,16 @@ async function fetchStats() {
 }
 
 function renderStats(data) {
-  const total = data?.total_analyses ?? data?.score ?? '—';
-  const month = data?.this_month ?? '—';
-  const score = data?.average_score ?? data?.score ?? '—';
+  const total = data?.total_analyses ?? data?.score ?? 'â€”';
+  const month = data?.this_month ?? 'â€”';
+  const score = data?.average_score ?? data?.score ?? 'â€”';
 
   const hasBreakdown = ['critical', 'high', 'medium', 'low']
     .every((k) => typeof data?.[k] === 'number');
   const breakdown = hasBreakdown
     ? data.critical + data.high + data.medium + data.low
     : null;
-  const failles = data?.total_failles ?? breakdown ?? '—';
+  const failles = data?.total_failles ?? breakdown ?? 'â€”';
 
   document.getElementById('stat-total').textContent = total;
   document.getElementById('stat-month').textContent = month;
@@ -102,10 +102,10 @@ function renderStats(data) {
 }
 
 function renderStatsUnavailable() {
-  document.getElementById('stat-total').textContent = '—';
-  document.getElementById('stat-month').textContent = '—';
-  document.getElementById('stat-score').innerHTML = '—<span>/100</span>';
-  document.getElementById('stat-failles').textContent = '—';
+  document.getElementById('stat-total').textContent = 'â€”';
+  document.getElementById('stat-month').textContent = 'â€”';
+  document.getElementById('stat-score').innerHTML = 'â€”<span>/100</span>';
+  document.getElementById('stat-failles').textContent = 'â€”';
 }
 
 function scoreClass(score) {
@@ -254,3 +254,4 @@ async function init() {
 }
 
 init();
+
