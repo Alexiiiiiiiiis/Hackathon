@@ -263,6 +263,10 @@ async function init() {
     await loadUserInfo();
   }
 
+  if (typeof loadSidebarStats === 'function') {
+    loadSidebarStats();
+  }
+
   try {
     const stats = await fetchStats();
     renderStats(stats);
@@ -279,4 +283,3 @@ async function init() {
 }
 
 init();
-

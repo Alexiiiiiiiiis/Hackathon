@@ -63,6 +63,26 @@ class AuthController extends AbstractController
         ], Response::HTTP_CREATED);
     }
 
+    #[Route('/login', name: 'login', methods: ['POST'])]
+    public function login(Request $request): JsonResponse
+    {
+        $data  = json_decode($request->getContent(), true) ?? [];
+        $email = trim($data['email'] ?? '');
+        $pass  = $data['password'] ?? '';
+
+        $user = $this->em->getRepository(User::class)->findOneBy(['email' => $email]);
+        if (!$user || !$this->hasher->isPasswordValid($user, $pass)) {
+            return $this->json(['error' => 'Identifiants invalides.'], Response::HTTP_UNAUTHORIZED);
+        }
+
+        $token = $this->jwtManager->create($user);
+
+        return $this->json([
+            'token' => $token,
+            'user'  => ['id' => $user->getId(), 'email' => $user->getEmail()],
+        ]);
+    }
+
     #[Route('/me', name: 'me', methods: ['GET'])]
     public function me(): JsonResponse
     {
@@ -102,15 +122,6 @@ class AuthController extends AbstractController
             ]);
 
             $githubUser = $provider->getResourceOwner($accessToken);
-    // GET /api/auth/github/callback
-    // Cree/associe un utilisateur, emet un JWT puis redirige vers le frontend avec #token=...
-    #[Route('/github/callback', name: 'github_callback', methods: ['GET'])]
-    public function githubCallback(ClientRegistry $clientRegistry): Response
-    {
-        try {
-            $client = $clientRegistry->getClient('github_main');
-            $accessToken = $client->getAccessToken();
-            $githubUser = $client->fetchUserFromToken($accessToken);
 
             $githubId = (string) $githubUser->getId();
             $email = $githubUser->getEmail() ?: sprintf('github_%s@users.noreply.local', $githubId);
@@ -121,20 +132,12 @@ class AuthController extends AbstractController
             if (!$user) {
                 $user = new User();
                 $user->setEmail($email);
-                // Mot de passe aleatoire pour les comptes OAuth uniquement.
                 $user->setPassword($this->hasher->hashPassword($user, bin2hex(random_bytes(32))));
                 $this->em->persist($user);
                 $this->em->flush();
             }
 
             $jwt = $this->jwtManager->create($user);
-            $payload = [
-                'token' => $jwt,
-                'user' => [
-                    'id' => $user->getId(),
-                    'email' => $user->getEmail(),
-                ],
-            ];
 
             $frontendSuccessUrl = $_ENV['FRONTEND_GITHUB_SUCCESS_URL']
                 ?? $_SERVER['FRONTEND_GITHUB_SUCCESS_URL']
@@ -142,8 +145,6 @@ class AuthController extends AbstractController
                 ?? '';
 
             if (is_string($frontendSuccessUrl) && $frontendSuccessUrl !== '') {
-            if (is_string($frontendSuccessUrl) && $frontendSuccessUrl !== '') {
-                // Utilise le fragment (#token=...) pour eviter l'exposition du JWT dans les logs/referers.
                 $tokenFragment = 'token=' . urlencode($jwt);
                 $redirectUrl = str_contains($frontendSuccessUrl, '#')
                     ? ($frontendSuccessUrl . '&' . $tokenFragment)
@@ -154,16 +155,14 @@ class AuthController extends AbstractController
 
             return $this->json([
                 'token' => $jwt,
-                'user' => ['id' => $user->getId(), 'email' => $user->getEmail()],
+                'user'  => ['id' => $user->getId(), 'email' => $user->getEmail()],
             ]);
 
-            return $this->json($payload);
         } catch (\Throwable $e) {
             return $this->json([
-                'error' => 'Echec de l authentification GitHub',
+                'error'   => 'Echec de l\'authentification GitHub',
                 'details' => $e->getMessage(),
             ], Response::HTTP_BAD_REQUEST);
         }
     }
-}
 }
