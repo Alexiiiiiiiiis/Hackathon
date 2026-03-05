@@ -11,8 +11,17 @@ services:
             - '../src/Entity/'
             - '../src/Kernel.php'
 
-    App\Service\Scanner\:
-        resource: '../src/Service/Scanner/'
+    # Services de scan avec le tag explicite
+    App\Service\Scanner\SemgrepScanner:
+        tags: ['app.scanner']
+
+    App\Service\Scanner\EslintScanner:
+        tags: ['app.scanner']
+
+    App\Service\Scanner\NpmAuditScanner:
+        tags: ['app.scanner']
+
+    App\Service\Scanner\TruffleHogScanner:
         tags: ['app.scanner']
 
     App\Service\ScanOrchestrator:

@@ -10,7 +10,6 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 
 #[Route('/api/fix', name: 'api_fix_')]
-// Routes fix: generer, appliquer, rejeter
 class FixController extends AbstractController
 {
     public function __construct(
@@ -23,8 +22,12 @@ class FixController extends AbstractController
     public function generate(int $vulnId): JsonResponse
     {
         $vuln = $this->vulnRepo->find($vulnId);
-        if (!$vuln) return $this->json(['error' => 'Vulnérabilité introuvable'], Response::HTTP_NOT_FOUND);
+        if (!$vuln) {
+            return $this->json(['error' => 'Vulnérabilité introuvable'], Response::HTTP_NOT_FOUND);
+        }
+
         $fix = $this->fixService->generateFix($vuln);
+
         return $this->json([
             'id'           => $fix->getId(),
             'originalCode' => $fix->getOriginalCode(),
@@ -37,34 +40,44 @@ class FixController extends AbstractController
     #[Route('/{id}/apply', name: 'apply', methods: ['POST'])]
     public function apply(int $id): JsonResponse
     {
+        // Cherche d'abord par ID de fix
         $fix = $this->fixRepo->find($id);
+
+        // Sinon cherche par ID de vulnérabilité
         if (!$fix) {
             $vuln = $this->vulnRepo->find($id);
             if (!$vuln) {
-                return $this->json(['error' => 'Fix ou vulnerabilite introuvable'], Response::HTTP_NOT_FOUND);
+                return $this->json(['error' => 'Fix ou vulnérabilité introuvable'], Response::HTTP_NOT_FOUND);
             }
             $fix = $this->fixService->generateFix($vuln);
         }
+
         try {
             $this->fixService->applyFix($fix);
         } catch (\RuntimeException $e) {
             return $this->json(['error' => $e->getMessage()], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
+
         return $this->json(['id' => $fix->getId(), 'status' => $fix->getStatus()]);
     }
 
     #[Route('/{id}/reject', name: 'reject', methods: ['POST'])]
     public function reject(int $id): JsonResponse
     {
+        // Cherche d'abord par ID de fix
         $fix = $this->fixRepo->find($id);
+
+        // Sinon cherche par ID de vulnérabilité
         if (!$fix) {
             $vuln = $this->vulnRepo->find($id);
             if (!$vuln || !$vuln->getFix()) {
-                return $this->json(['error' => 'Fix ou vulnerabilite introuvable'], Response::HTTP_NOT_FOUND);
+                return $this->json(['error' => 'Fix ou vulnérabilité introuvable'], Response::HTTP_NOT_FOUND);
             }
             $fix = $vuln->getFix();
         }
+
         $this->fixService->rejectFix($fix);
+
         return $this->json(['id' => $fix->getId(), 'status' => $fix->getStatus()]);
     }
 }

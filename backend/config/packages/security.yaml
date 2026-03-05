@@ -14,6 +14,11 @@ security:
             pattern: ^/(_(profiler|wdt)|css|images|js)/
             security: false
 
+        options:
+            pattern: ^/
+            methods: [OPTIONS]
+            security: false
+
         login:
             pattern: ^/api/auth/login$
             stateless: true
@@ -28,14 +33,18 @@ security:
             pattern: ^/api/auth/register$
             security: false
 
+        github:
+            pattern: ^/api/auth/github
+            security: false
+
         api:
             pattern: ^/api
             stateless: true
             jwt: ~
 
     access_control:
-        - { path: ^/api/auth/login,    roles: PUBLIC_ACCESS }
-        - { path: ^/api/auth/register, roles: PUBLIC_ACCESS }
-        - { path: ^/api/auth/github, roles: PUBLIC_ACCESS }
+        - { path: ^/api/auth/login,           roles: PUBLIC_ACCESS }
+        - { path: ^/api/auth/register,        roles: PUBLIC_ACCESS }
+        - { path: ^/api/auth/github,          roles: PUBLIC_ACCESS }
         - { path: ^/api/auth/github/callback, roles: PUBLIC_ACCESS }
-        - { path: ^/api,               roles: IS_AUTHENTICATED_FULLY }
+        - { path: ^/api,                      roles: IS_AUTHENTICATED_FULLY }
