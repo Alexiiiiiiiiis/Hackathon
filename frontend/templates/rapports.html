@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Rapports de sécurité — SecureScan</title>
+    <link rel="stylesheet" href="rapports.css" />
+  </head>
+
+  <body>
+    <div class="layout">
+      <!-- SIDEBAR -->
+      <aside class="sidebar">
+        <div class="sidebar-top">
+  <div class="brand">
+  <svg class="shield-logo" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+    <path d="M12 2L4 6v6c0 5 3.5 8 8 10 4.5-2 8-5 8-10V6l-8-4z"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"/>
+  </svg>
+
+  <span class="brand-name">SecureScan</span>
+</div>
+
+          <nav class="nav">
+           <a class="nav-item" href="dashboard.html">
+  <svg class="nav-icon" viewBox="0 0 24 24">
+    <rect x="3" y="3" width="7" height="7"/>
+    <rect x="14" y="3" width="7" height="7"/>
+    <rect x="3" y="14" width="7" height="7"/>
+    <rect x="14" y="14" width="7" height="7"/>
+  </svg>
+  <span>Tableau de bord</span>
+</a>
+            <a class="nav-item" href="nouvelle_analyse.html">
+              <span class="nav-ico">＋</span>
+              <span>Nouvelle analyse</span>
+            </a>
+           <a class="nav-item" href="historique.html">
+  <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+    <circle cx="12" cy="12" r="9"/>
+    <polyline points="12 7 12 12 15 15"/>
+  </svg>
+  <span>Historique</span>
+</a>
+
+<a class="nav-item" href="rapports.html">
+  <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+    <polyline points="14 2 14 8 20 8"/>
+  </svg>
+  <span>Rapports</span>
+</a>
+          </nav>
+
+          <!-- WIDGETS (doivent descendre) -->
+          <div class="side-widgets">
+            <div class="widget widget-score">
+              <div class="widget-head">
+                <span class="widget-title">Niveau de sécurité</span>
+               <span class="score-trend">
+  <svg viewBox="0 0 24 24" class="trend-ico">
+    <path d="M6 16l6-6 4 4 4-4" stroke="currentColor" stroke-width="2" fill="none"/>
+  </svg>
+</span>
+              </div>
+              <div class="score">
+                <span class="score-value">72</span><span class="score-total">/100</span>
+              </div>
+              <div class="bar">
+                <div class="bar-fill" style="width:72%"></div>
+              </div>
+            </div>
+
+            <div class="widget widget-issues">
+              <div class="widget-head">
+                <span class="widget-title">Problèmes détectés</span>
+              </div>
+              <div class="issues">
+                <div class="issues-value">23</div>
+             <div class="issues-mini">
+  <span class="crit"><b>2</b> Critiques</span>
+  <span class="sep">•</span>
+  <span class="high"><b>7</b> élevés</span>
+</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="sidebar-bottom">
+          <a class="nav-item" href="#">
+           <span class="nav-ico" aria-hidden="true">
+  <svg class="ico" viewBox="0 0 24 24">
+    <path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z" fill="none" stroke="currentColor" stroke-width="2"/>
+    <path d="M19.4 15a7.9 7.9 0 0 0 .1-6l2-1.5-2-3.5-2.4 1a8 8 0 0 0-5.2-2l-.4-2.6H9.5L9 3a8 8 0 0 0-5.2 2l-2.4-1-2 3.5 2 1.5a8 8 0 0 0 0 6l-2 1.5 2 3.5 2.4-1a8 8 0 0 0 5.2 2l.5 2.6h3.9l.4-2.6a8 8 0 0 0 5.2-2l2.4 1 2-3.5-2-1.5Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+  </svg>
+</span>
+            <span>Paramètres</span>
+          </a>
+
+          <a class="nav-item" href="#">
+      <span class="nav-ico" aria-hidden="true">
+  <svg class="ico" viewBox="0 0 24 24">
+    <path d="M12 18h.01" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+    <path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.9.4-1.5 1.2-1.5 2.2v.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+    <path d="M12 22a10 10 0 1 0-10-10 10 10 0 0 0 10 10Z" fill="none" stroke="currentColor" stroke-width="2"/>
+  </svg>
+</span>
+            <span>Aide & Support</span>
+          </a>
+
+      <div class="account">
+  <div class="avatar">E</div>
+
+  <div class="account-meta">
+    <div class="account-name">Emiliekk</div>
+    <div class="account-mail">emiliek@company.com</div>
+     </div>
+      </div>
+
+    <a class="sb-out" href="login.html">
+  <svg viewBox="0 0 24 24">
+    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+    <polyline points="16 17 21 12 16 7"/>
+    <line x1="21" y1="12" x2="9" y2="12"/>
+  </svg>
+  <span>Se déconnecter</span>
+</a>
+        </div>
+      </aside>
+
+      <!-- MAIN -->
+      <main class="main">
+        <header class="topbar">
+          <h1>Rapports de sécurité</h1>
+
+          <div class="top-actions">
+            <button class="icon-btn" title="Notifications">🔔</button>
+            <button class="user-btn">
+              <span class="user-ico">👤</span>
+              <span>Emiliekk</span>
+            </button>
+          </div>
+        </header>
+
+        <!-- CARDS -->
+        <section class="cards">
+          <button class="card">
+            <div class="card-ico bg-cyan">＋</div>
+            <div class="card-text">
+              <div class="card-title">Génère un nouveau rapport</div>
+              <div class="card-sub">Crée un rapport en le personnalisant</div>
+            </div>
+          </button>
+
+          <button class="card">
+            <div class="card-ico bg-purple">⬇</div>
+            <div class="card-text">
+              <div class="card-title">Téléchargements groupé</div>
+              <div class="card-sub">Télécharge plusieurs rapports</div>
+            </div>
+          </button>
+
+          <button class="card">
+            <div class="card-ico bg-orange">⏱</div>
+            <div class="card-text">
+              <div class="card-title">Planifier un rapport</div>
+              <div class="card-sub">Automatise ton prochain rapport</div>
+            </div>
+          </button>
+        </section>
+
+        <!-- FILTERS -->
+        <section class="filters">
+          <div class="filters-left">
+            <span class="filters-ico">⎇</span>
+            <span class="filters-title">Filtres</span>
+          </div>
+
+          <div class="filters-right">
+            <input id="filterName" class="finput" type="text" placeholder="Nom du rapport" />
+            <input id="filterRepo" class="finput" type="text" placeholder="Repository" />
+            <select id="filterType" class="finput">
+              <option value="">Type</option>
+              <option value="rapport complet">rapport complet</option>
+              <option value="conformité">conformité</option>
+              <option value="résumé exécutif">résumé exécutif</option>
+            </select>
+          </div>
+        </section>
+
+        <!-- TABLE -->
+        <section class="panel">
+          <div class="panel-head">
+            <h2>Rapports disponible</h2>
+          </div>
+
+          <div class="table">
+            <div class="trow thead">
+              <div>Nom du rapport</div>
+              <div>Repository</div>
+              <div>Type</div>
+              <div>Date</div>
+              <div>Tailles</div>
+              <div class="tcenter">Actions</div>
+            </div>
+
+   <div id="reportsTable">
+
+  <div class="trow">
+    <div>Rapport de sécurité - projet alpha</div>
+    <div>utilisateur/projet-alpha</div>
+    <div>Rapport complet</div>
+    <div>01/03/2026</div>
+    <div>2.4 MB</div>
+    <div class="tcenter">
+      <button class="action">⬇</button>
+      <button class="action">👁</button>
+    </div>
+  </div>
+
+  <div class="trow">
+    <div>Rapport de sécurité - application beta</div>
+    <div>utilisateur/app-beta</div>
+    <div>Rapport complet</div>
+    <div>28/02/2026</div>
+    <div>1.8 MB</div>
+    <div class="tcenter">
+      <button class="action">⬇</button>
+      <button class="action">👁</button>
+    </div>
+  </div>
+
+  <div class="trow">
+    <div>Rapport de sécurité - API gamma</div>
+    <div>utilisateur/api-gamma</div>
+    <div>Résumé exécutif</div>
+    <div>25/02/2026</div>
+    <div>950 KB</div>
+    <div class="tcenter">
+      <button class="action">⬇</button>
+      <button class="action">👁</button>
+    </div>
+  </div>
+
+  <div class="trow">
+    <div>Rapport de sécurité - plateforme delta</div>
+    <div>utilisateur/plateforme-delta</div>
+    <div>Conformité</div>
+    <div>22/02/2026</div>
+    <div>1.2 MB</div>
+    <div class="tcenter">
+      <button class="action">⬇</button>
+      <button class="action">👁</button>
+    </div>
+  </div>
+
+</div>
+          </div>
+
+          <div class="table-footer">
+            <div class="muted" id="tableInfo">Voir 1-3 sur 24 rapports</div>
+
+            <div class="pager">
+              <button class="pbtn" id="prevBtn">Page précédente</button>
+              <button class="pnum active" data-page="1">1</button>
+              <button class="pnum" data-page="2">2</button>
+              <button class="pnum" data-page="3">3</button>
+              <button class="pbtn" id="nextBtn">Suivant</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- BUILDER -->
+        <section class="panel panel-builder">
+          <div class="panel-head">
+            <h2>Personnaliser le contenu du rapport</h2>
+          </div>
+
+          <div class="builder">
+            <div class="builder-left">
+              <label class="opt">
+                <input class="section-check" type="checkbox" checked />
+                <span>Résumé exécutif</span>
+              </label>
+              <label class="opt">
+                <input class="section-check" type="checkbox" checked />
+                <span>Détails techniques des vulnérabilités</span>
+              </label>
+              <label class="opt">
+                <input class="section-check" type="checkbox" />
+                <span>Mapping OWASP</span>
+              </label>
+              <label class="opt">
+                <input class="section-check" type="checkbox" />
+                <span>Plan de correction</span>
+              </label>
+              <label class="opt">
+                <input class="section-check" type="checkbox" checked />
+                <span>Exemple de code</span>
+              </label>
+              <label class="opt">
+                <input class="section-check" type="checkbox" />
+                <span>Liste de conformité</span>
+              </label>
+            </div>
+
+            <div class="builder-right">
+              <div class="preview">
+                <div class="preview-title">Aperçu</div>
+                <div class="preview-box">
+                  <div class="doc-ico">📄</div>
+                  <div class="muted">aperçu du rapport</div>
+                  <div class="muted small" id="sectionsCount">3 sections sélectionné</div>
+                </div>
+                <button class="primary" id="genBtn">Générer le rapport</button>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script src="rapport.js"></script>
+  </body>
+</html>
