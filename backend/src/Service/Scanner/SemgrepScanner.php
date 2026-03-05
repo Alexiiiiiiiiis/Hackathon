@@ -5,6 +5,7 @@ use App\DTO\VulnerabilityDTO;
 use App\Enum\OwaspCategory;
 use App\Enum\Severity;
 use Psr\Log\LoggerInterface;
+use Symfony\Component\Process\Process;
 
 class SemgrepScanner implements ScannerInterface
 {
@@ -38,27 +39,57 @@ class SemgrepScanner implements ScannerInterface
         'validation'     => OwaspCategory::A06_INSECURE_DESIGN,
     ];
 
+    // Variables d'environnement passées à Semgrep pour corriger l'encodage Windows
+    private const ENV = [
+        'PYTHONUTF8'        => '1',
+        'PYTHONIOENCODING'  => 'utf-8',
+        'SEMGREP_FORCE_COLOR' => 'false',
+    ];
+
     public function __construct(private readonly LoggerInterface $logger) {}
 
     public function getName(): string { return 'semgrep'; }
 
     public function isAvailable(): bool
     {
-        $cmd = PHP_OS_FAMILY === 'Windows' ? 'where semgrep 2>nul' : 'which semgrep 2>/dev/null';
-        exec($cmd, $o, $c);
-        return $c === 0;
+        $process = new Process(['semgrep', '--version'], null, self::ENV);
+        $process->run();
+        return $process->isSuccessful();
     }
 
     public function scan(string $projectPath): array
     {
-        $null = PHP_OS_FAMILY === 'Windows' ? 'nul' : '/dev/null';
-        exec(
-            sprintf('semgrep --config=auto --json --quiet %s 2>%s', escapeshellarg($projectPath), $null),
-            $out, $code
-        );
-        if ($code > 1) { $this->logger->error('Semgrep error', ['code' => $code]); return []; }
-        $json = json_decode(implode("\n", $out), true);
-        if (!isset($json['results'])) return [];
+        $process = new Process([
+            'semgrep',
+            '--config=auto',
+            '--json',
+            '--quiet',
+            $projectPath,
+        ], null, self::ENV);
+
+        $process->setTimeout(300);
+        $process->run();
+
+        // Semgrep retourne exit code 1 quand il trouve des vulnérabilités — c'est normal
+        if ($process->getExitCode() > 1) {
+            $this->logger->error('Semgrep error', [
+                'code'   => $process->getExitCode(),
+                'stderr' => $process->getErrorOutput(),
+            ]);
+            return [];
+        }
+
+        $json = json_decode($process->getOutput(), true);
+
+        if (!isset($json['results'])) {
+            $this->logger->warning('Semgrep: pas de results dans le JSON', [
+                'output' => substr($process->getOutput(), 0, 500),
+            ]);
+            return [];
+        }
+
+        $this->logger->info('Semgrep: ' . count($json['results']) . ' findings');
+
         return array_map(fn($r) => $this->parseResult($r), $json['results']);
     }
 

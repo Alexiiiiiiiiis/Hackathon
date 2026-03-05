@@ -43,8 +43,8 @@ class ScanOrchestrator
                 foreach ($dtos as $dto) {
                     $this->owaspMapper->mapAndPersist($dto, $scan);
                 }
-            } catch (\Throwable $e) {
-                $this->logger->error("Erreur {$scanner->getName()}", ['exception' => $e]);
+            } catch (\Throwable $e) {$this->logger->error("Erreur {$scanner->getName()}: " . $e->getMessage() . " in " . $e->getFile() . ":" . $e->getLine(), ['trace' => $e->getTraceAsString()]);
+                
             }
         }
 
