@@ -3,6 +3,7 @@ namespace App\Controller;
 
 use App\Entity\User;
 use Doctrine\ORM\EntityManagerInterface;
+use GuzzleHttp\Client as GuzzleClient;
 use KnpU\OAuth2ClientBundle\Client\ClientRegistry;
 use Lexik\Bundle\JWTAuthenticationBundle\Services\JWTTokenManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -24,7 +25,6 @@ class AuthController extends AbstractController
         private readonly ValidatorInterface           $validator,
     ) {}
 
-    //  POST /api/auth/register 
     #[Route('/register', name: 'register', methods: ['POST'])]
     public function register(Request $request): JsonResponse
     {
@@ -32,7 +32,6 @@ class AuthController extends AbstractController
         $email = trim($data['email'] ?? '');
         $pass  = $data['password'] ?? '';
 
-        // Validation manuelle rapide
         $errors = [];
         if (empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
             $errors[] = 'Email invalide.';
@@ -44,7 +43,6 @@ class AuthController extends AbstractController
             return $this->json(['errors' => $errors], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
 
-        // Email unique
         $existing = $this->em->getRepository(User::class)->findOneBy(['email' => $email]);
         if ($existing) {
             return $this->json(['error' => 'Email déjà utilisé.'], Response::HTTP_CONFLICT);
@@ -65,9 +63,6 @@ class AuthController extends AbstractController
         ], Response::HTTP_CREATED);
     }
 
-    //  POST /api/auth/login 
-    // (LexikJWT gère automatiquement /api/auth/login via security.yaml)
-    // Ce endpoint sert de fallback documentaire
     #[Route('/me', name: 'me', methods: ['GET'])]
     public function me(): JsonResponse
     {
@@ -83,8 +78,6 @@ class AuthController extends AbstractController
         ]);
     }
 
-    // GET /api/auth/github
-    // Redirige l'utilisateur vers GitHub pour autorisation OAuth.
     #[Route('/github', name: 'github', methods: ['GET'])]
     public function githubLogin(ClientRegistry $clientRegistry): RedirectResponse
     {
@@ -93,6 +86,22 @@ class AuthController extends AbstractController
             ->redirect(['read:user', 'user:email'], []);
     }
 
+    #[Route('/github/callback', name: 'github_callback', methods: ['GET'])]
+    public function githubCallback(ClientRegistry $clientRegistry, Request $request): Response
+    {
+        try {
+            // Désactive SSL pour dev Windows
+            $httpClient = new GuzzleClient(['verify' => false]);
+
+            $client = $clientRegistry->getClient('github_main');
+            $provider = $client->getOAuth2Provider();
+            $provider->setHttpClient($httpClient);
+
+            $accessToken = $provider->getAccessToken('authorization_code', [
+                'code' => $request->query->get('code'),
+            ]);
+
+            $githubUser = $provider->getResourceOwner($accessToken);
     // GET /api/auth/github/callback
     // Cree/associe un utilisateur, emet un JWT puis redirige vers le frontend avec #token=...
     #[Route('/github/callback', name: 'github_callback', methods: ['GET'])]
@@ -131,6 +140,8 @@ class AuthController extends AbstractController
                 ?? $_SERVER['FRONTEND_GITHUB_SUCCESS_URL']
                 ?? getenv('FRONTEND_GITHUB_SUCCESS_URL')
                 ?? '';
+
+            if (is_string($frontendSuccessUrl) && $frontendSuccessUrl !== '') {
             if (is_string($frontendSuccessUrl) && $frontendSuccessUrl !== '') {
                 // Utilise le fragment (#token=...) pour eviter l'exposition du JWT dans les logs/referers.
                 $tokenFragment = 'token=' . urlencode($jwt);
@@ -141,6 +152,11 @@ class AuthController extends AbstractController
                 return $this->redirect($redirectUrl, Response::HTTP_FOUND);
             }
 
+            return $this->json([
+                'token' => $jwt,
+                'user' => ['id' => $user->getId(), 'email' => $user->getEmail()],
+            ]);
+
             return $this->json($payload);
         } catch (\Throwable $e) {
             return $this->json([
@@ -149,4 +165,5 @@ class AuthController extends AbstractController
             ], Response::HTTP_BAD_REQUEST);
         }
     }
+}
 }

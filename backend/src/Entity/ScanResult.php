@@ -11,7 +11,7 @@ use Doctrine\ORM\Mapping as ORM;
 class ScanResult
 {
     #[ORM\Id]
-    #[ORM\GeneratedValue]
+    #[ORM\GeneratedValue]   
     #[ORM\Column]
     private ?int $id = null;
 
@@ -64,11 +64,20 @@ class ScanResult
             $this->grade = 'A';
             return;
         }
-        $penalty = 0;
+
+        $counts = ['critical' => 0, 'high' => 0, 'medium' => 0, 'low' => 0, 'info' => 0];
         foreach ($vulns as $v) {
-            $penalty += $v->getSeverity()->penaltyPoints();
+            $key = strtolower($v->getSeverity()->value);
+            if (isset($counts[$key])) $counts[$key]++;
         }
-        $this->globalScore = max(0, 100 - $penalty);
+
+        // Pénalité plafonnée par catégorie pour éviter un score systématiquement à 0
+        $penalty = min(60, $counts['critical'] * 8)
+                 + min(25, $counts['high']     * 3)
+                 + min(10, $counts['medium']   * 1)
+                 + min(5,  $counts['low']      * 0);
+
+        $this->globalScore = max(1, 100 - (int) $penalty);
         $this->grade = match(true) {
             $this->globalScore >= 90 => 'A',
             $this->globalScore >= 75 => 'B',

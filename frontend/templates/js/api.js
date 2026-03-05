@@ -1,36 +1,14 @@
 /**
- * ============================================================
- *  SecureScan – api.js  (charger EN PREMIER sur toutes les pages)
- *  Changez API_BASE_URL si votre backend tourne ailleurs
- * ============================================================
+ * SecureScan – api.js  (charger EN PREMIER sur toutes les pages)
  */
-const API_BASE_URL = resolveApiBaseUrl();
+const API_BASE_URL = 'http://127.0.0.1:8000';
 
-function resolveApiBaseUrl() {
-  if (window.__API_BASE__) {
-    return String(window.__API_BASE__).replace(/\/$/, '');
-  }
-
-  if (window.location.protocol === 'file:') {
-    return 'http://127.0.0.1:8000';
-  }
-
-  return `${window.location.protocol}//${window.location.hostname}:8000`;
-}
-
-// ── Stockage JWT ──────────────────────────────────────────────
 function getToken()   { return localStorage.getItem('ss_token'); }
 function saveToken(t) { localStorage.setItem('ss_token', t); }
-function clearAuth()  {
-  localStorage.removeItem('ss_token');
-  localStorage.removeItem('ss_user');
-}
+function clearAuth()  { localStorage.removeItem('ss_token'); localStorage.removeItem('ss_user'); }
 function saveUser(u)  { localStorage.setItem('ss_user', JSON.stringify(u)); }
-function getUser()    {
-  try { return JSON.parse(localStorage.getItem('ss_user') || 'null'); } catch { return null; }
-}
+function getUser()    { try { return JSON.parse(localStorage.getItem('ss_user') || 'null'); } catch { return null; } }
 
-// ── Requête générique ─────────────────────────────────────────
 async function apiRequest(method, path, body = null, isFormData = false) {
   const headers = { 'Accept': 'application/json' };
   const token = getToken();
@@ -53,8 +31,7 @@ async function apiRequest(method, path, body = null, isFormData = false) {
   try { data = text ? JSON.parse(text) : null; } catch { data = { message: text }; }
 
   if (!res.ok) {
-    const msg = data?.message
-      || data?.error
+    const msg = data?.message || data?.error
       || (Array.isArray(data?.errors) ? data.errors.join(', ') : null)
       || 'Erreur serveur (' + res.status + ')';
     throw new Error(msg);
@@ -62,7 +39,6 @@ async function apiRequest(method, path, body = null, isFormData = false) {
   return data;
 }
 
-// ── Auth ──────────────────────────────────────────────────────
 const Auth = {
   async login(email, password) {
     const data = await apiRequest('POST', '/api/auth/login', { email, password });
@@ -76,18 +52,10 @@ const Auth = {
     if (data.user) saveUser(data.user);
     return data;
   },
-  async me() {
-    const data = await apiRequest('GET', '/api/auth/me');
-    saveUser(data);
-    return data;
-  },
-  logout() {
-    clearAuth();
-    window.location.href = 'login.html';
-  }
+  async me() { const data = await apiRequest('GET', '/api/auth/me'); saveUser(data); return data; },
+  logout()   { clearAuth(); window.location.href = 'login.html'; }
 };
 
-// ── Projets ───────────────────────────────────────────────────
 const Projects = {
   list()          { return apiRequest('GET', '/api/projects'); },
   get(id)         { return apiRequest('GET', `/api/projects/${id}`); },
@@ -95,7 +63,6 @@ const Projects = {
   delete(id)      { return apiRequest('DELETE', `/api/projects/${id}`); },
 };
 
-// ── Scans ─────────────────────────────────────────────────────
 const Scans = {
   submitGit(gitUrl, name) {
     return apiRequest('POST', '/api/scan/project', {
@@ -104,13 +71,12 @@ const Scans = {
       sourceType: gitUrl.includes('gitlab.com') ? 'gitlab' : 'github',
     });
   },
-  launch(projectId)  { return apiRequest('POST', `/api/scan/${projectId}/launch`); },
-  results(scanId)    { return apiRequest('GET',  `/api/scan/${scanId}`); },
-  latest(projectId)  { return apiRequest('GET',  `/api/scan/project/${projectId}/latest`); },
-  owasp(scanId)      { return apiRequest('GET',  `/api/scan/${scanId}/owasp`); },
+  launch(projectId) { return apiRequest('POST', `/api/scan/${projectId}/launch`); },
+  results(scanId)   { return apiRequest('GET',  `/api/scan/${scanId}`); },
+  latest(projectId) { return apiRequest('GET',  `/api/scan/project/${projectId}/latest`); },
+  owasp(scanId)     { return apiRequest('GET',  `/api/scan/${scanId}/owasp`); },
 };
 
-// ── Upload ZIP ────────────────────────────────────────────────
 const Upload = {
   zip(file, name) {
     const fd = new FormData();
@@ -120,30 +86,33 @@ const Upload = {
   }
 };
 
-// ── Fixes ─────────────────────────────────────────────────────
 const Fixes = {
   generate(vulnId) { return apiRequest('POST', `/api/fix/generate/${vulnId}`); },
   apply(fixId)     { return apiRequest('POST', `/api/fix/${fixId}/apply`); },
   reject(fixId)    { return apiRequest('POST', `/api/fix/${fixId}/reject`); },
 };
 
-// ── Notifications ─────────────────────────────────────────────
 const Notifications = {
   count() { return apiRequest('GET', '/api/notifications/count'); }
 };
 
-// ── Rapports ─────────────────────────────────────────────────
 const Reports = {
-  url(projectId) { return `${API_BASE_URL}/api/report/${projectId}`; }
+  url(scanId) { return `${API_BASE_URL}/api/report/${scanId}`; }
 };
 
-// ── Guard auth ────────────────────────────────────────────────
 function requireAuth() {
   if (!getToken()) { window.location.href = 'login.html'; return false; }
   return true;
 }
 
-// ── Remplir infos utilisateur dans sidebar/topbar ────────────
+// Récupère le token depuis ?token= ou #token= (OAuth)
+function bootstrapOAuthTokenFromUrl() {
+  const qp = new URLSearchParams(window.location.search);
+  const hp = new URLSearchParams(window.location.hash.startsWith('#') ? window.location.hash.slice(1) : '');
+  const token = (hp.get('token') || qp.get('token') || '').trim();
+  if (token) saveToken(token);
+}
+
 async function loadUserInfo() {
   try {
     let user = getUser();

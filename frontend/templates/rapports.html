@@ -146,33 +146,6 @@
           </div>
         </header>
 
-        <!-- CARDS -->
-        <section class="cards">
-          <button class="card">
-            <div class="card-ico bg-cyan">＋</div>
-            <div class="card-text">
-              <div class="card-title">Génère un nouveau rapport</div>
-              <div class="card-sub">Crée un rapport en le personnalisant</div>
-            </div>
-          </button>
-
-          <button class="card">
-            <div class="card-ico bg-purple">⬇</div>
-            <div class="card-text">
-              <div class="card-title">Téléchargements groupé</div>
-              <div class="card-sub">Télécharge plusieurs rapports</div>
-            </div>
-          </button>
-
-          <button class="card">
-            <div class="card-ico bg-orange">⏱</div>
-            <div class="card-text">
-              <div class="card-title">Planifier un rapport</div>
-              <div class="card-sub">Automatise ton prochain rapport</div>
-            </div>
-          </button>
-        </section>
-
         <!-- FILTERS -->
         <section class="filters">
           <div class="filters-left">
@@ -283,27 +256,27 @@
           <div class="builder">
             <div class="builder-left">
               <label class="opt">
-                <input class="section-check" type="checkbox" checked />
+                <input class="section-check" data-section="executive_summary" type="checkbox" checked />
                 <span>Résumé exécutif</span>
               </label>
               <label class="opt">
-                <input class="section-check" type="checkbox" checked />
+                <input class="section-check" data-section="technical_details" type="checkbox" checked />
                 <span>Détails techniques des vulnérabilités</span>
               </label>
               <label class="opt">
-                <input class="section-check" type="checkbox" />
+                <input class="section-check" data-section="owasp_mapping" type="checkbox" />
                 <span>Mapping OWASP</span>
               </label>
               <label class="opt">
-                <input class="section-check" type="checkbox" />
+                <input class="section-check" data-section="correction_plan" type="checkbox" />
                 <span>Plan de correction</span>
               </label>
               <label class="opt">
-                <input class="section-check" type="checkbox" checked />
+                <input class="section-check" data-section="code_examples" type="checkbox" checked />
                 <span>Exemple de code</span>
               </label>
               <label class="opt">
-                <input class="section-check" type="checkbox" />
+                <input class="section-check" data-section="compliance_checklist" type="checkbox" />
                 <span>Liste de conformité</span>
               </label>
             </div>
