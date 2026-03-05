@@ -30,7 +30,7 @@ SecureScan est une plateforme interne développée pour **CyberSafe Solutions**,
 ```
 securescan/
 ├── backend/       # API REST — Symfony (PHP)
-├── frontend/      # Interface utilisateur — React (Vite)
+├── frontend/      # Interface utilisateur — HTML / CSS / JS
 ├── .gitignore
 └── README.md
 ```
@@ -109,13 +109,13 @@ L'API backend tourne sur `http://localhost:8000`
 ## 📋 Livrables
 
 - [x] Repository Git avec historique de commits et README
-- [ ] Maquettes / wireframes
-- [ ] Diagrammes UML
+- [x] Maquettes / wireframes
+- [x] Diagrammes UML
 - [ ] Application fonctionnelle
-- [ ] Dashboard de visualisation OWASP
-- [ ] Rapport de sécurité généré (HTML)
+- [x] Dashboard de visualisation OWASP
+- [ ] Rapport de sécurité généré (PDF)
 - [ ] Présentation PowerPoint
-- [ ] Documentation technique
+- [x] Documentation technique
 
 ---
 
