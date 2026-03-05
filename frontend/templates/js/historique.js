@@ -68,6 +68,14 @@ function bindLogout() {
   });
 }
 
+function getAuthorizationHeader() {
+  const token = (typeof getToken === 'function')
+    ? getToken()
+    : localStorage.getItem('ss_token');
+
+  return token ? { Authorization: 'Bearer ' + token } : {};
+}
+
 // ── Fetch ─────────────────────────────────────────────────────
 async function fetchHistory(page = 1) {
   const params = new URLSearchParams({
@@ -76,12 +84,17 @@ async function fetchHistory(page = 1) {
     date_from: dateVal,
     status:    statusVal,
   });
+  const path = `${ENDPOINTS.history}?${params.toString()}`;
   try {
-    const res = await fetch(`${ENDPOINTS.history}?${params}`, {
+    if (typeof apiRequest === 'function') {
+      return await apiRequest('GET', path);
+    }
+
+    const res = await fetch(path, {
       headers: {
-        'Accept': 'application/json',
-        'Authorization': 'Bearer ' + (sessionStorage.getItem('auth_token') || '')
-      }
+        Accept: 'application/json',
+        ...getAuthorizationHeader(),
+      },
     });
     if (!res.ok) throw new Error('HTTP ' + res.status);
     return await res.json();
@@ -105,13 +118,17 @@ async function fetchHistory(page = 1) {
 
 async function fetchStats() {
   try {
+    if (typeof apiRequest === 'function') {
+      return await apiRequest('GET', ENDPOINTS.stats);
+    }
+
     const res = await fetch(ENDPOINTS.stats, {
       headers: {
-        'Accept': 'application/json',
-        'Authorization': 'Bearer ' + (sessionStorage.getItem('auth_token') || '')
-      }
+        Accept: 'application/json',
+        ...getAuthorizationHeader(),
+      },
     });
-    if (!res.ok) throw new Error();
+    if (!res.ok) throw new Error('HTTP ' + res.status);
     return await res.json();
   } catch (e) {
     return MOCK_STATS;
