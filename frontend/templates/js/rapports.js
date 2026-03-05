@@ -1,41 +1,5 @@
-﻿const REPORTS = [
-  {
-    id: 1,
-    name: "Securite Rapport-project-alpha",
-    repo: "username/project-alpha",
-    type: "rapport complet",
-    typeColor: "cyan",
-    date: "01-03-2026",
-    size: "2.4 MB",
-  },
-  {
-    id: 2,
-    name: "Securite Rapport-webapp-beta",
-    repo: "username/webapp-beta",
-    type: "rapport complet",
-    typeColor: "cyan",
-    date: "21-02-2026",
-    size: "1.8 MB",
-  },
-  {
-    id: 3,
-    name: "Conformite OWASP - api-services",
-    repo: "username/api-service",
-    type: "conformite",
-    typeColor: "purple",
-    date: "12-02-2026",
-    size: "3.2 MB",
-  },
-  {
-    id: 4,
-    name: "Resume executif-code-existant",
-    repo: "username/mobile-app",
-    type: "resume executif",
-    typeColor: "green",
-    date: "03-02-2026",
-    size: "1.5 MB",
-  },
-];
+const DEFAULT_PER_PAGE = 10;
+const FILTER_DEBOUNCE_MS = 300;
 
 const elTable = document.getElementById("reportsTable");
 const elInfo = document.getElementById("tableInfo");
@@ -43,68 +7,210 @@ const elFilterName = document.getElementById("filterName");
 const elFilterRepo = document.getElementById("filterRepo");
 const elFilterType = document.getElementById("filterType");
 
-function pillClass(color) {
-  if (color === "purple") return "pill purple";
-  if (color === "green") return "pill green";
+const checks = Array.from(document.querySelectorAll(".section-check"));
+const elCount = document.getElementById("sectionsCount");
+
+const state = {
+  page: 1,
+  perPage: DEFAULT_PER_PAGE,
+  total: 0,
+  debounceTimer: null,
+};
+
+function canonicalType(value) {
+  return String(value || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .replace(/\s+/g, " ");
+}
+
+function normalizeTypeFilter(value) {
+  const type = canonicalType(value);
+  if (!type) return "";
+  if (type.includes("resume")) return "resume executif";
+  if (type.includes("conformite")) return "conformite";
+  if (type.includes("rapport")) return "rapport complet";
+  return "";
+}
+
+function typeToPill(typeValue) {
+  const type = canonicalType(typeValue);
+  if (type.includes("resume")) return "pill green";
+  if (type.includes("conformite")) return "pill purple";
   return "pill cyan";
 }
 
-function escapeHtml(str) {
-  return String(str)
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
+function formatType(typeValue) {
+  const type = canonicalType(typeValue);
+  if (type === "resume executif") return "resume executif";
+  if (type === "conformite") return "conformite";
+  if (type === "rapport complet") return "rapport complet";
+  return String(typeValue || "—");
 }
 
-function renderTable(data) {
-  if (!elTable || !elInfo) return;
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function showTableMessage(message, color = "#64748b") {
+  if (!elTable) return;
+  elTable.innerHTML = `
+    <div class="trow tbody-row">
+      <div style="grid-column:1 / -1;text-align:center;padding:12px 0;color:${escapeHtml(color)};">
+        ${escapeHtml(message)}
+      </div>
+    </div>
+  `;
+}
+
+function updateTableInfo(total, page, perPage, currentCount) {
+  if (!elInfo) return;
+
+  if (total <= 0 || currentCount <= 0) {
+    elInfo.textContent = "Voir 0-0 sur 0 rapports";
+    return;
+  }
+
+  const from = (page - 1) * perPage + 1;
+  const to = Math.min(from + currentCount - 1, total);
+  elInfo.textContent = `Voir ${from}-${to} sur ${total} rapports`;
+}
+
+function renderTable(items) {
+  if (!elTable) return;
+
+  if (!Array.isArray(items) || items.length === 0) {
+    showTableMessage("Aucun rapport disponible.");
+    updateTableInfo(0, 1, state.perPage, 0);
+    return;
+  }
 
   elTable.innerHTML = "";
 
-  data.forEach((r) => {
+  items.forEach((item) => {
     const row = document.createElement("div");
     row.className = "trow tbody-row";
 
+    const name = escapeHtml(item.name || "Rapport");
+    const repo = escapeHtml(item.repository || "—");
+    const typeLabel = escapeHtml(formatType(item.type));
+    const typeClass = typeToPill(item.type);
+    const date = escapeHtml(item.date || "—");
+    const size = escapeHtml(item.size_label || "—");
+
     row.innerHTML = `
       <div>
-        <div class="report-name">${escapeHtml(r.name)}</div>
+        <div class="report-name">${name}</div>
         <div class="report-sub">Format PDF</div>
       </div>
-      <div class="repo">${escapeHtml(r.repo)}</div>
-      <div><span class="${pillClass(r.typeColor)}">${escapeHtml(r.type)}</span></div>
-      <div class="date"><span class="cal">📅</span><span>${escapeHtml(r.date)}</span></div>
-      <div class="size">${escapeHtml(r.size)}</div>
+      <div class="repo">${repo}</div>
+      <div><span class="${typeClass}">${typeLabel}</span></div>
+      <div class="date"><span class="cal">📅</span><span>${date}</span></div>
+      <div class="size">${size}</div>
       <div class="tcenter"><button class="pdf" type="button">PDF</button></div>
     `;
 
     const pdfBtn = row.querySelector(".pdf");
     if (pdfBtn) {
       pdfBtn.addEventListener("click", () => {
-        alert(`Telechargement: ${r.name}`);
+        alert(`Telechargement: ${item.name || "Rapport"}`);
       });
     }
 
     elTable.appendChild(row);
   });
-
-  elInfo.textContent = `Voir 1-${Math.min(3, data.length)} sur ${Math.max(24, data.length)} rapports`;
 }
 
-function applyFilters() {
-  const name = (elFilterName?.value || "").trim().toLowerCase();
-  const repo = (elFilterRepo?.value || "").trim().toLowerCase();
-  const type = elFilterType?.value || "";
+function buildReportsPath(page = 1) {
+  const params = new URLSearchParams();
+  params.set("page", String(page));
+  params.set("per_page", String(state.perPage));
 
-  const filtered = REPORTS.filter((r) => {
-    const okName = !name || r.name.toLowerCase().includes(name);
-    const okRepo = !repo || r.repo.toLowerCase().includes(repo);
-    const okType = !type || r.type === type;
-    return okName && okRepo && okType;
+  const name = (elFilterName?.value || "").trim();
+  const repo = (elFilterRepo?.value || "").trim();
+  const type = normalizeTypeFilter(elFilterType?.value || "");
+
+  if (name) params.set("name", name);
+  if (repo) params.set("repo", repo);
+  if (type) params.set("type", type);
+
+  return `/api/reports?${params.toString()}`;
+}
+
+function getAuthorizationHeader() {
+  const token = (typeof getToken === "function")
+    ? getToken()
+    : localStorage.getItem("ss_token");
+
+  return token ? { Authorization: "Bearer " + token } : {};
+}
+
+async function fetchReports(page = 1) {
+  const path = buildReportsPath(page);
+
+  if (typeof apiRequest === "function") {
+    return apiRequest("GET", path);
+  }
+
+  const response = await fetch(path, {
+    headers: {
+      Accept: "application/json",
+      ...getAuthorizationHeader(),
+    },
   });
 
-  renderTable(filtered);
+  if (!response.ok) {
+    throw new Error("HTTP " + response.status);
+  }
+
+  return response.json();
+}
+
+async function loadReports(page = 1) {
+  showTableMessage("Chargement des rapports...");
+
+  try {
+    const data = await fetchReports(page);
+    const items = Array.isArray(data?.items) ? data.items : [];
+
+    state.total = Number(data?.total || 0);
+    state.page = Number(data?.page || page);
+    state.perPage = Number(data?.per_page || state.perPage);
+
+    renderTable(items);
+    updateTableInfo(state.total, state.page, state.perPage, items.length);
+  } catch (error) {
+    showTableMessage("Impossible de charger les rapports.", "#ef4444");
+    if (elInfo) {
+      elInfo.textContent = "Erreur de chargement";
+    }
+  }
+}
+
+function scheduleFilterRefresh() {
+  clearTimeout(state.debounceTimer);
+  state.debounceTimer = setTimeout(() => {
+    state.page = 1;
+    loadReports(1);
+  }, FILTER_DEBOUNCE_MS);
+}
+
+function bindFilters() {
+  if (elFilterName) elFilterName.addEventListener("input", scheduleFilterRefresh);
+  if (elFilterRepo) elFilterRepo.addEventListener("input", scheduleFilterRefresh);
+  if (elFilterType) {
+    elFilterType.addEventListener("change", () => {
+      state.page = 1;
+      loadReports(1);
+    });
+  }
 }
 
 function bindLogout() {
@@ -152,13 +258,22 @@ async function hydrateUserInfo() {
   if (topbarName) topbarName.textContent = pseudo;
 }
 
-const checks = Array.from(document.querySelectorAll(".section-check"));
-const elCount = document.getElementById("sectionsCount");
-
 function updateSelectedCount() {
   if (!elCount) return;
-  const n = checks.filter((c) => c.checked).length;
-  elCount.textContent = `${n} section${n > 1 ? "s" : ""} selectionne${n > 1 ? "es" : ""}`;
+  const selected = checks.filter((c) => c.checked).length;
+  elCount.textContent = `${selected} section${selected > 1 ? "s" : ""} selectionne${selected > 1 ? "es" : ""}`;
+}
+
+function bindBuilder() {
+  checks.forEach((c) => c.addEventListener("change", updateSelectedCount));
+
+  const genBtn = document.getElementById("genBtn");
+  if (genBtn) {
+    genBtn.addEventListener("click", () => {
+      const selected = checks.filter((c) => c.checked).length;
+      alert(`Rapport genere avec ${selected} section${selected > 1 ? "s" : ""}.`);
+    });
+  }
 }
 
 async function initPage() {
@@ -166,23 +281,10 @@ async function initPage() {
 
   bindLogout();
   await hydrateUserInfo();
-
-  if (elFilterName) elFilterName.addEventListener("input", applyFilters);
-  if (elFilterRepo) elFilterRepo.addEventListener("input", applyFilters);
-  if (elFilterType) elFilterType.addEventListener("change", applyFilters);
-
-  checks.forEach((c) => c.addEventListener("change", updateSelectedCount));
-
-  const genBtn = document.getElementById("genBtn");
-  if (genBtn) {
-    genBtn.addEventListener("click", () => {
-      const n = checks.filter((c) => c.checked).length;
-      alert(`Rapport genere avec ${n} section${n > 1 ? "s" : ""}.`);
-    });
-  }
-
-  renderTable(REPORTS);
+  bindFilters();
+  bindBuilder();
   updateSelectedCount();
+  await loadReports(1);
 }
 
 initPage();
