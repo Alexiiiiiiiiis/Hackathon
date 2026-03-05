@@ -41,17 +41,19 @@
           <span class="sw-lbl">Niveau de sécurité</span>
           <span class="sw-trend"><svg viewBox="0 0 24 24"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg></span>
         </div>
-        <div class="sw-val"><span>72</span><sub> /100</sub></div>
-        <div class="sw-track"><div class="sw-fill" style="width:72%"></div></div>
+        <div class="sw-val"><span id="sw-score">–</span><sub> /100</sub></div>
+        <div class="sw-track"><div class="sw-fill" id="sw-bar" style="width:0%"></div></div>
       </div>
+
       <div class="sd">
         <div class="sd-top">
           <span class="sd-lbl">Problèmes détectés</span>
           <span class="sd-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></span>
         </div>
-        <div class="sd-count">23</div>
-        <div class="sd-sub"><b>2</b> Critiques · <b class="h">7</b> élevés</div>
+        <div class="sd-count" id="sw-total">–</div>
+        <div class="sd-sub"><b id="sw-crit">–</b> Critiques · <b class="h" id="sw-high">–</b> élevés</div>
       </div>
+
       <div class="sb-extra">
         <a class="ni" href="#">
           <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>
@@ -62,13 +64,15 @@
           Aide & Support
         </a>
       </div>
+
       <div class="su">
-        <div class="su-av">E</div>
+        <div class="su-av">?</div>
         <div class="su-info">
-          <div class="su-name">Emiliekk</div>
-          <div class="su-mail">emiliek@company.com</div>
+          <div class="su-name su-name">–</div>
+          <div class="su-mail su-mail">–</div>
         </div>
       </div>
+
       <a class="sb-out" href="login.html">
         <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
         Se déconnecter
@@ -86,7 +90,7 @@
         </div>
         <div class="tb-user">
           <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-          Emiliekk
+          <span class="su-name">–</span>
         </div>
       </div>
     </div>
@@ -201,6 +205,46 @@
   </main>
 </div>
 <script src="js/api.js"></script>
+<script src="js/nouvelle_analyse.js" type="module-helper" onload="void 0"></script>
+<script>
+  // Expose loadSidebarStats depuis nouvelle_analyse.js si pas encore chargé
+  // On réutilise la même logique ici directement pour éviter les dépendances circulaires
+  async function loadSidebarStats() {
+    try {
+      const projects = await Projects.list();
+      if (!projects || projects.length === 0) return;
+
+      projects.sort((a, b) => b.id - a.id);
+
+      let scan = null;
+      let fallback = null;
+      for (const p of projects) {
+        try {
+          const s = await Scans.latest(p.id);
+          if (!s) continue;
+          if (!fallback) fallback = s;
+          if ((s.vulns && s.vulns.length > 0) || (s.stats?.score ?? s.stats?.globalScore ?? 100) < 100) {
+            scan = s;
+            break;
+          }
+        } catch { /* essayer suivant */ }
+      }
+      if (!scan) scan = fallback;
+      if (!scan) return;
+
+      const vulns = scan.vulns || [];
+      const P     = { critical:20, high:12, medium:7, low:3, info:1 };
+      const score = scan.stats?.score ?? scan.stats?.globalScore ?? Math.max(0, 100 - vulns.reduce((a, v) => a + (P[v.severity] || 1), 0));
+
+      const el = id => document.getElementById(id);
+      if (el('sw-score')) el('sw-score').textContent = score;
+      if (el('sw-bar'))   el('sw-bar').style.width    = score + '%';
+      if (el('sw-total')) el('sw-total').textContent  = vulns.length;
+      if (el('sw-crit'))  el('sw-crit').textContent   = vulns.filter(v => (v.severity || '').toLowerCase() === 'critical').length;
+      if (el('sw-high'))  el('sw-high').textContent   = vulns.filter(v => (v.severity || '').toLowerCase() === 'high').length;
+    } catch { /* silencieux */ }
+  }
+</script>
 <script src="js/historique.js"></script>
 </body>
 </html>
