@@ -313,13 +313,17 @@ async function fetchReportResponse(projectId, options = {}) {
 
 async function openReportPreview(projectId, scanId, actionButton) {
   const releaseButton = setButtonBusy(actionButton, true);
-  const previewTab = window.open("", "_blank", "noopener");
+  const previewTab = window.open("about:blank", "_blank");
   if (!previewTab) {
     releaseButton();
     alert("Autorise les popups pour ouvrir le rapport.");
     return;
   }
-  previewTab.opener = null;
+  try {
+    previewTab.document.title = "Chargement du rapport...";
+  } catch (_) {
+    // ignore
+  }
 
   try {
     const response = await fetchReportResponse(projectId, {
@@ -330,11 +334,17 @@ async function openReportPreview(projectId, scanId, actionButton) {
 
     const blob = new Blob([html], { type: "text/html;charset=utf-8" });
     const blobUrl = window.URL.createObjectURL(blob);
-    previewTab.location.href = blobUrl;
-    setTimeout(() => window.URL.revokeObjectURL(blobUrl), 30000);
+    previewTab.location.replace(blobUrl);
+    setTimeout(() => window.URL.revokeObjectURL(blobUrl), 120000);
   } catch (error) {
-    previewTab.close();
-    alert(toUserMessage(error, "Impossible d'ouvrir le rapport."));
+    const message = toUserMessage(error, "Impossible d'ouvrir le rapport.");
+    const fallbackUrl = `data:text/plain;charset=utf-8,${encodeURIComponent(message)}`;
+    try {
+      previewTab.location.replace(fallbackUrl);
+    } catch (_) {
+      // ignore
+    }
+    alert(message);
   } finally {
     releaseButton();
   }
