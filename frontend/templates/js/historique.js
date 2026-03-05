@@ -99,16 +99,16 @@ async function fetchStats() {
 }
 
 function renderStats(data) {
-  const total = data?.total_analyses ?? data?.score ?? '—';
-  const month = data?.this_month ?? '—';
-  const score = data?.average_score ?? data?.score ?? '—';
+  const total = data?.total_analyses ?? data?.score ?? '-';
+  const month = data?.this_month ?? '-';
+  const score = data?.average_score ?? data?.score ?? '-';
 
   const hasBreakdown = ['critical', 'high', 'medium', 'low']
     .every((k) => typeof data?.[k] === 'number');
   const breakdown = hasBreakdown
     ? data.critical + data.high + data.medium + data.low
     : null;
-  const failles = data?.total_failles ?? breakdown ?? '—';
+  const failles = data?.total_failles ?? breakdown ?? '-';
 
   document.getElementById('stat-total').textContent = total;
   document.getElementById('stat-month').textContent = month;
@@ -117,10 +117,10 @@ function renderStats(data) {
 }
 
 function renderStatsUnavailable() {
-  document.getElementById('stat-total').textContent = '—';
-  document.getElementById('stat-month').textContent = '—';
-  document.getElementById('stat-score').innerHTML = '—<span>/100</span>';
-  document.getElementById('stat-failles').textContent = '—';
+  document.getElementById('stat-total').textContent = '-';
+  document.getElementById('stat-month').textContent = '-';
+  document.getElementById('stat-score').innerHTML = '-<span>/100</span>';
+  document.getElementById('stat-failles').textContent = '-';
 }
 
 function scoreClass(score) {
