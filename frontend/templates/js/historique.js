@@ -1,63 +1,23 @@
 // ============================================================
 // CONFIG API
-// ↓ Remplacez par l'URL de base de votre backend Symfony
 // ============================================================
 const API_BASE = '/api';
 const ENDPOINTS = {
-  history: API_BASE + '/history',   // GET → liste des analyses
-                                    // Params: ?page=1&search=&date_from=&date_to=&status=
-  stats:   API_BASE + '/dashboard', // GET → stats globales (réutilise le dashboard)
+  history: API_BASE + '/history',
+  stats: API_BASE + '/dashboard',
 };
 
-// ============================================================
-// FORMAT ATTENDU PAR GET /api/history :
-// {
-//   "total": 24,
-//   "page": 1,
-//   "per_page": 4,
-//   "analyses": [
-//     {
-//       "id": "abc123",
-//       "project_id": 1,
-//       "repository": "username/project-alpha",
-//       "date": "01-03-2026",
-//       "score": 72,
-//       "failles": 23,
-//       "status": "Complété"
-//     }
-//   ]
-// }
-// ============================================================
-
-const MOCK = {
-  total: 24,
-  page: 1,
-  per_page: 4,
-  analyses: [
-    { id:'v1', project_id:1, repository:'username/project-alpha',  date:'01-03-2026', score:72, failles:23, status:'Complété' },
-    { id:'v2', project_id:2, repository:'username/webapp-beta',    date:'21-02-2026', score:85, failles:12, status:'Complété' },
-    { id:'v3', project_id:3, repository:'username/api-service',    date:'12-02-2026', score:68, failles:31, status:'Complété' },
-    { id:'v4', project_id:4, repository:'username/mobile-app',     date:'03-02-2026', score:91, failles:5,  status:'Complété' },
-  ]
-};
-
-const MOCK_STATS = {
-  total_analyses: 24,
-  this_month: 1,
-  average_score: 73,
-  total_failles: 140,
-};
-
-// ── État ─────────────────────────────────────────────────────
-let currentPage  = 1;
-let totalPages   = 1;
-let searchVal    = '';
-let dateVal      = '';
-let statusVal    = '';
+// Etat
+let currentPage = 1;
+let totalPages = 1;
+let searchVal = '';
+let dateVal = '';
+let statusVal = '';
+let debounceTimer;
 
 function bindLogout() {
-  document.querySelectorAll('.sb-out').forEach(el => {
-    el.addEventListener('click', e => {
+  document.querySelectorAll('.sb-out').forEach((el) => {
+    el.addEventListener('click', (e) => {
       e.preventDefault();
       if (typeof Auth !== 'undefined' && typeof Auth.logout === 'function') {
         Auth.logout();
@@ -76,87 +36,113 @@ function getAuthorizationHeader() {
   return token ? { Authorization: 'Bearer ' + token } : {};
 }
 
-// ── Fetch ─────────────────────────────────────────────────────
 async function fetchHistory(page = 1) {
   const params = new URLSearchParams({
     page,
-    search:    searchVal,
+    search: searchVal,
     date_from: dateVal,
-    status:    statusVal,
+    status: statusVal,
   });
-  const path = `${ENDPOINTS.history}?${params.toString()}`;
-  try {
-    if (typeof apiRequest === 'function') {
-      return await apiRequest('GET', path);
-    }
 
-    const res = await fetch(path, {
-      headers: {
-        Accept: 'application/json',
-        ...getAuthorizationHeader(),
-      },
-    });
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    return await res.json();
-  } catch (e) {
-    console.warn('[SecureScan] API indisponible, données de démo.', e.message);
-    // Filtre côté client sur le mock
-    let filtered = MOCK.analyses.filter(a =>
-      a.repository.toLowerCase().includes(searchVal.toLowerCase()) &&
-      (statusVal === '' || a.status.toLowerCase().includes(statusVal.toLowerCase()))
-    );
-    const perPage = MOCK.per_page;
-    const start   = (page - 1) * perPage;
-    return {
-      total:    filtered.length,
-      page,
-      per_page: perPage,
-      analyses: filtered.slice(start, start + perPage),
-    };
+  const path = `${ENDPOINTS.history}?${params.toString()}`;
+
+  if (typeof apiRequest === 'function') {
+    return apiRequest('GET', path);
   }
+
+  const res = await fetch(path, {
+    headers: {
+      Accept: 'application/json',
+      ...getAuthorizationHeader(),
+    },
+  });
+
+  if (!res.ok) {
+    throw new Error('HTTP ' + res.status);
+  }
+
+  return res.json();
 }
 
 async function fetchStats() {
-  try {
-    if (typeof apiRequest === 'function') {
-      return await apiRequest('GET', ENDPOINTS.stats);
-    }
-
-    const res = await fetch(ENDPOINTS.stats, {
-      headers: {
-        Accept: 'application/json',
-        ...getAuthorizationHeader(),
-      },
-    });
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    return await res.json();
-  } catch (e) {
-    return MOCK_STATS;
+  if (typeof apiRequest === 'function') {
+    return apiRequest('GET', ENDPOINTS.stats);
   }
+
+  const res = await fetch(ENDPOINTS.stats, {
+    headers: {
+      Accept: 'application/json',
+      ...getAuthorizationHeader(),
+    },
+  });
+
+  if (!res.ok) {
+    throw new Error('HTTP ' + res.status);
+  }
+
+  return res.json();
 }
 
-// ── Rendu stats ───────────────────────────────────────────────
-function renderStats(d) {
-  document.getElementById('stat-total').textContent    = d.total_analyses ?? d.score ?? 24;
-  document.getElementById('stat-month').textContent    = d.this_month ?? 1;
-  document.getElementById('stat-score').innerHTML      = (d.average_score ?? d.score ?? 73) + '<span>/100</span>';
-  document.getElementById('stat-failles').textContent  = d.total_failles ?? (d.critical + d.high + d.medium + d.low) ?? 140;
+function renderStats(data) {
+  const total = data?.total_analyses ?? data?.score ?? '�';
+  const month = data?.this_month ?? '�';
+  const score = data?.average_score ?? data?.score ?? '�';
+
+  const hasBreakdown = ['critical', 'high', 'medium', 'low']
+    .every((k) => typeof data?.[k] === 'number');
+  const breakdown = hasBreakdown
+    ? data.critical + data.high + data.medium + data.low
+    : null;
+  const failles = data?.total_failles ?? breakdown ?? '�';
+
+  document.getElementById('stat-total').textContent = total;
+  document.getElementById('stat-month').textContent = month;
+  document.getElementById('stat-score').innerHTML = `${score}<span>/100</span>`;
+  document.getElementById('stat-failles').textContent = failles;
 }
 
-// ── Rendu table ───────────────────────────────────────────────
+function renderStatsUnavailable() {
+  document.getElementById('stat-total').textContent = '�';
+  document.getElementById('stat-month').textContent = '�';
+  document.getElementById('stat-score').innerHTML = '�<span>/100</span>';
+  document.getElementById('stat-failles').textContent = '�';
+}
+
 function scoreClass(score) {
   if (score >= 80) return 'score-good';
   if (score >= 60) return 'score-ok';
   return 'score-bad';
 }
 
+function renderTableError(message) {
+  const tbody = document.getElementById('history-tbody');
+  tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:20px;color:#ef4444;">${message}</td></tr>`;
+
+  document.getElementById('pag-info').textContent = 'Erreur de chargement';
+  document.getElementById('pag-pages').innerHTML = '';
+  document.getElementById('pag-prev').disabled = true;
+  document.getElementById('pag-next').disabled = true;
+}
+
+function toUserMessage(error, fallback) {
+  const detail = error && error.message ? String(error.message).trim() : '';
+  return detail ? `${fallback} (${detail})` : fallback;
+}
+
 function renderTable(data) {
   const tbody = document.getElementById('history-tbody');
-  if (!data.analyses.length) {
-    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:20px;color:var(--tl)">Aucun résultat</td></tr>';
+  const analyses = Array.isArray(data?.analyses) ? data.analyses : [];
+
+  if (!analyses.length) {
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:20px;color:var(--tl)">Aucun resultat</td></tr>';
+    document.getElementById('pag-info').textContent = '0 resultat';
+    document.getElementById('pag-pages').innerHTML = '';
+    document.getElementById('pag-prev').disabled = true;
+    document.getElementById('pag-next').disabled = true;
     return;
   }
-  tbody.innerHTML = data.analyses.map(a => `
+
+  tbody.innerHTML = analyses.map((a) => `
     <tr>
       <td>
         <div class="repo-name">${a.repository}</div>
@@ -169,7 +155,7 @@ function renderTable(data) {
         </div>
       </td>
       <td><span class="score-badge ${scoreClass(a.score)}">${a.score}/100</span></td>
-      <td><span class="failles">${a.failles} problèmes</span></td>
+      <td><span class="failles">${a.failles} problemes</span></td>
       <td>
         <div class="actions-cell">
           <a class="btn-voir" href="dashboard.html?id=${a.id}">Voir</a>
@@ -179,62 +165,92 @@ function renderTable(data) {
     </tr>
   `).join('');
 
-  // Pagination
-  totalPages = Math.ceil(data.total / data.per_page) || 1;
-  document.getElementById('pag-info').textContent =
-    `Voir ${Math.min((currentPage - 1) * data.per_page + 1, data.total)}–${Math.min(currentPage * data.per_page, data.total)} sur ${data.total} analyses`;
+  const total = Number(data?.total ?? analyses.length);
+  const perPage = Number(data?.per_page ?? analyses.length || 1);
+  totalPages = Math.max(1, Math.ceil(total / perPage));
+
+  const from = Math.min((currentPage - 1) * perPage + 1, total);
+  const to = Math.min(currentPage * perPage, total);
+  document.getElementById('pag-info').textContent = `Voir ${from}-${to} sur ${total} analyses`;
 
   renderPagination();
 }
 
-// ── Pagination ────────────────────────────────────────────────
 function renderPagination() {
   const container = document.getElementById('pag-pages');
   let html = '';
-  for (let i = 1; i <= Math.min(totalPages, 5); i++) {
+
+  for (let i = 1; i <= Math.min(totalPages, 5); i += 1) {
     html += `<button class="pag-btn ${i === currentPage ? 'active' : ''}" onclick="goToPage(${i})">${i}</button>`;
   }
+
   container.innerHTML = html;
   document.getElementById('pag-prev').disabled = currentPage === 1;
   document.getElementById('pag-next').disabled = currentPage === totalPages;
 }
 
 async function goToPage(page) {
+  if (page < 1 || page > totalPages) return;
   currentPage = page;
-  const data = await fetchHistory(page);
-  renderTable(data);
+
+  try {
+    const data = await fetchHistory(page);
+    renderTable(data);
+  } catch (e) {
+    renderTableError(toUserMessage(e, "Impossible de charger l'historique."));
+  }
 }
 
-// ── Filtres ───────────────────────────────────────────────────
-let debounceTimer;
 function handleSearch(val) {
   searchVal = val;
   clearTimeout(debounceTimer);
+
   debounceTimer = setTimeout(async () => {
     currentPage = 1;
-    const data = await fetchHistory(1);
-    renderTable(data);
+    try {
+      const data = await fetchHistory(1);
+      renderTable(data);
+    } catch (e) {
+      renderTableError(toUserMessage(e, "Impossible de charger l'historique."));
+    }
   }, 300);
 }
 
 async function handleFilter() {
-  dateVal   = document.getElementById('filter-date').value;
+  dateVal = document.getElementById('filter-date').value;
   statusVal = document.getElementById('filter-status').value;
   currentPage = 1;
-  const data = await fetchHistory(1);
-  renderTable(data);
+
+  try {
+    const data = await fetchHistory(1);
+    renderTable(data);
+  } catch (e) {
+    renderTableError(toUserMessage(e, "Impossible de charger l'historique."));
+  }
 }
 
-// ── Init ──────────────────────────────────────────────────────
 async function init() {
   if (typeof requireAuth === 'function' && !requireAuth()) return;
+
   bindLogout();
+
   if (typeof loadUserInfo === 'function') {
     await loadUserInfo();
   }
-  const [stats, history] = await Promise.all([fetchStats(), fetchHistory(1)]);
-  renderStats(stats);
-  renderTable(history);
+
+  try {
+    const stats = await fetchStats();
+    renderStats(stats);
+  } catch (e) {
+    renderStatsUnavailable();
+  }
+
+  try {
+    const history = await fetchHistory(1);
+    renderTable(history);
+  } catch (e) {
+    renderTableError(toUserMessage(e, "Impossible de charger l'historique."));
+  }
 }
 
 init();
