@@ -12,6 +12,16 @@ const elPager = document.querySelector(".pager");
 
 const checks = Array.from(document.querySelectorAll(".section-check"));
 const elCount = document.getElementById("sectionsCount");
+const elPreviewText = document.querySelector(".preview-box .muted");
+
+const SECTION_IDS = new Set([
+  "executive_summary",
+  "technical_details",
+  "owasp_mapping",
+  "correction_plan",
+  "code_examples",
+  "compliance_checklist",
+]);
 
 const state = {
   page: 1,
@@ -21,6 +31,8 @@ const state = {
   debounceTimer: null,
   lastRequestId: 0,
   loading: false,
+  currentItems: [],
+  selectedReport: null,
 };
 
 function getApiBaseUrl() {
@@ -45,6 +57,9 @@ function buildReportApiUrl(projectId, options = {}) {
   if (options.scanId) params.set("scan_id", String(options.scanId));
   if (options.download) params.set("download", "1");
   if (options.format) params.set("format", String(options.format));
+  if (Array.isArray(options.sections) && options.sections.length > 0) {
+    params.set("sections", options.sections.join(","));
+  }
 
   const query = params.toString();
   const suffix = query ? `?${query}` : "";
@@ -173,6 +188,53 @@ function setButtonBusy(button, busy) {
   };
 }
 
+function getSelectedSections() {
+  return checks
+    .filter((input) => input.checked)
+    .map((input) => String(input.dataset.section || "").trim())
+    .filter((section) => SECTION_IDS.has(section));
+}
+
+function getSelectedReportLabel() {
+  if (!state.selectedReport) return "Aucun rapport selectionne";
+  return state.selectedReport.name || "Rapport selectionne";
+}
+
+function updatePreviewReportLabel() {
+  if (!elPreviewText) return;
+  elPreviewText.textContent = `Apercu: ${getSelectedReportLabel()}`;
+}
+
+function isSameReport(a, b) {
+  if (!a || !b) return false;
+  return Number(a.projectId) === Number(b.projectId) && Number(a.scanId) === Number(b.scanId);
+}
+
+function setSelectedReport(item) {
+  const projectId = Number(item?.project_id || item?.projectId || 0);
+  const scanId = Number(item?.scan_id || item?.scanId || 0);
+  if (!Number.isInteger(projectId) || projectId <= 0) return;
+
+  state.selectedReport = {
+    projectId,
+    scanId: Number.isInteger(scanId) && scanId > 0 ? scanId : 0,
+    name: String(item?.name || "rapport-securite"),
+  };
+  updatePreviewReportLabel();
+  refreshSelectedRowStyles();
+}
+
+function refreshSelectedRowStyles() {
+  const rows = Array.from(document.querySelectorAll("#reportsTable .tbody-row"));
+  rows.forEach((row) => {
+    const rowProject = Number(row.dataset.projectId || 0);
+    const rowScan = Number(row.dataset.scanId || 0);
+    const selected = isSameReport(state.selectedReport, { projectId: rowProject, scanId: rowScan });
+    row.style.background = selected ? "#eef6ff" : "";
+    row.style.boxShadow = selected ? "inset 3px 0 0 #0ea5e9" : "";
+  });
+}
+
 function clampPage(page) {
   const safePage = Number(page) || 1;
   if (safePage < 1) return 1;
@@ -223,7 +285,11 @@ function renderPagination() {
 function renderTable(items) {
   if (!elTable) return;
 
+  state.currentItems = Array.isArray(items) ? items : [];
+
   if (!Array.isArray(items) || items.length === 0) {
+    state.selectedReport = null;
+    updatePreviewReportLabel();
     showTableMessage("Aucun rapport disponible.");
     updateTableInfo(0, 1, state.perPage, 0);
     return;
@@ -244,6 +310,8 @@ function renderTable(items) {
     const projectId = Number(item.project_id || 0);
     const scanId = Number(item.scan_id || 0);
     const canOpen = Number.isInteger(projectId) && projectId > 0;
+    row.dataset.projectId = String(projectId);
+    row.dataset.scanId = String(scanId);
 
     row.innerHTML = `
       <div>
@@ -264,6 +332,7 @@ function renderTable(items) {
     if (viewBtn) {
       viewBtn.addEventListener("click", () => {
         if (!canOpen) return;
+        setSelectedReport(item);
         openReportPreview(projectId, scanId, viewBtn);
       });
     }
@@ -272,12 +341,38 @@ function renderTable(items) {
     if (pdfBtn) {
       pdfBtn.addEventListener("click", () => {
         if (!canOpen) return;
+        setSelectedReport(item);
         downloadReportFile(projectId, scanId, item.name || "rapport-securite", pdfBtn);
       });
     }
 
+    row.addEventListener("click", (event) => {
+      if (event.target instanceof Element && event.target.closest("button")) return;
+      if (!canOpen) return;
+      setSelectedReport(item);
+    });
+
     elTable.appendChild(row);
   });
+
+  const selectedStillVisible = state.selectedReport
+    && items.some((item) => isSameReport(state.selectedReport, {
+      projectId: Number(item.project_id || 0),
+      scanId: Number(item.scan_id || 0),
+    }));
+
+  if (!selectedStillVisible) {
+    const firstSelectable = items.find((item) => Number(item.project_id || 0) > 0);
+    if (firstSelectable) {
+      setSelectedReport(firstSelectable);
+    } else {
+      state.selectedReport = null;
+      updatePreviewReportLabel();
+    }
+  } else {
+    refreshSelectedRowStyles();
+    updatePreviewReportLabel();
+  }
 }
 
 async function fetchReportResponse(projectId, options = {}) {
@@ -350,13 +445,15 @@ async function openReportPreview(projectId, scanId, actionButton) {
   }
 }
 
-async function downloadReportFile(projectId, scanId, reportName, actionButton) {
+async function downloadReportFile(projectId, scanId, reportName, actionButton, options = {}) {
   const releaseButton = setButtonBusy(actionButton, true);
   try {
+    const sections = Array.isArray(options.sections) ? options.sections : [];
     const response = await fetchReportResponse(projectId, {
       scanId,
       format: "pdf",
       download: true,
+      sections,
     });
 
     const contentType = String(response.headers.get("content-type") || "");
@@ -585,14 +682,36 @@ function updateSelectedCount() {
   elCount.textContent = `${selected} section${selected > 1 ? "s" : ""} selectionne${selected > 1 ? "es" : ""}`;
 }
 
+async function generateCustomReport(actionButton) {
+  const selectedSections = getSelectedSections();
+  if (selectedSections.length === 0) {
+    alert("Selectionne au moins une section.");
+    return;
+  }
+
+  if (!state.selectedReport) {
+    alert("Selectionne d'abord un rapport dans la liste.");
+    return;
+  }
+
+  await downloadReportFile(
+    state.selectedReport.projectId,
+    state.selectedReport.scanId,
+    state.selectedReport.name,
+    actionButton,
+    { sections: selectedSections }
+  );
+}
+
 function bindBuilder() {
-  checks.forEach((c) => c.addEventListener("change", updateSelectedCount));
+  checks.forEach((c) => c.addEventListener("change", () => {
+    updateSelectedCount();
+  }));
 
   const genBtn = document.getElementById("genBtn");
   if (genBtn) {
-    genBtn.addEventListener("click", () => {
-      const selected = checks.filter((c) => c.checked).length;
-      alert(`Rapport genere avec ${selected} section${selected > 1 ? "s" : ""}.`);
+    genBtn.addEventListener("click", async () => {
+      await generateCustomReport(genBtn);
     });
   }
 }
@@ -606,6 +725,7 @@ async function initPage() {
   bindPagination();
   bindBuilder();
   updateSelectedCount();
+  updatePreviewReportLabel();
   await loadReports(1);
 }
 
