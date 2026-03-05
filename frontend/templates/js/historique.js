@@ -28,6 +28,21 @@ function bindLogout() {
   });
 }
 
+function escapeHtml(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function toPositiveInt(value) {
+  const n = Number(value);
+  if (!Number.isFinite(n) || n <= 0) return 0;
+  return Math.trunc(n);
+}
+
 function getAuthorizationHeader() {
   const token = (typeof getToken === 'function')
     ? getToken()
@@ -97,7 +112,7 @@ function renderStats(data) {
 
   document.getElementById('stat-total').textContent = total;
   document.getElementById('stat-month').textContent = month;
-  document.getElementById('stat-score').innerHTML = `${score}<span>/100</span>`;
+  document.getElementById('stat-score').innerHTML = `${escapeHtml(score)}<span>/100</span>`;
   document.getElementById('stat-failles').textContent = failles;
 }
 
@@ -116,7 +131,7 @@ function scoreClass(score) {
 
 function renderTableError(message) {
   const tbody = document.getElementById('history-tbody');
-  tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:20px;color:#ef4444;">${message}</td></tr>`;
+  tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:20px;color:#ef4444;">${escapeHtml(message)}</td></tr>`;
 
   document.getElementById('pag-info').textContent = 'Erreur de chargement';
   document.getElementById('pag-pages').innerHTML = '';
@@ -142,31 +157,41 @@ function renderTable(data) {
     return;
   }
 
-  tbody.innerHTML = analyses.map((a) => `
+  tbody.innerHTML = analyses.map((a) => {
+    const repo = escapeHtml(a?.repository);
+    const status = escapeHtml(a?.status);
+    const date = escapeHtml(a?.date);
+    const score = toPositiveInt(a?.score);
+    const failles = toPositiveInt(a?.failles);
+    const scanId = toPositiveInt(a?.id);
+    const projectId = toPositiveInt(a?.project_id);
+
+    return `
     <tr>
       <td>
-        <div class="repo-name">${a.repository}</div>
-        <div class="repo-status">${a.status}</div>
+        <div class="repo-name">${repo}</div>
+        <div class="repo-status">${status}</div>
       </td>
       <td>
         <div class="date-cell">
           <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-          ${a.date}
+          ${date}
         </div>
       </td>
-      <td><span class="score-badge ${scoreClass(a.score)}">${a.score}/100</span></td>
-      <td><span class="failles">${a.failles} problemes</span></td>
+      <td><span class="score-badge ${scoreClass(score)}">${score}/100</span></td>
+      <td><span class="failles">${failles} problemes</span></td>
       <td>
         <div class="actions-cell">
-          <a class="btn-voir" href="dashboard.html?id=${a.id}">Voir</a>
-          <a class="btn-rapport" href="/api/report/${a.project_id}?format=pdf" target="_blank">Rapport</a>
+          <a class="btn-voir" href="dashboard.html?id=${scanId}">Voir</a>
+          <a class="btn-rapport" href="/api/report/${projectId}?format=pdf" target="_blank">Rapport</a>
         </div>
       </td>
     </tr>
-  `).join('');
+  `;
+  }).join('');
 
   const total = Number(data?.total ?? analyses.length);
-  const perPage = Number(data?.per_page ?? analyses.length || 1);
+  const perPage = Number(data?.per_page ?? analyses.length ?? 1);
   totalPages = Math.max(1, Math.ceil(total / perPage));
 
   const from = Math.min((currentPage - 1) * perPage + 1, total);
