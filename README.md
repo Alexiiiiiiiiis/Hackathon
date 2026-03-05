@@ -43,19 +43,27 @@ SecureScan permet de:
 ## 3. Architecture du repo
 
 ```text
-secure-scan-groupe-2/
-|-- backend/                 # API Symfony
-|   |-- src/Controller/      # Auth, Scan, Upload, History, Reports, Fix, ...
-|   |-- src/Service/         # Orchestration scan + scanners + fixes
-|   |-- config/              # security, doctrine, cors, oauth, jwt
-|   `-- migrations/
-|-- frontend/
-|   |-- templates/           # Pages utilisees par l equipe (login, dashboard, historique, rapports...)
-|   |-- templates/js/        # Integration API + logique metier front
-|   |-- templates/css/
-|   |-- src/                 # React/Vite (optionnel, non prioritaire actuellement)
-|   `-- DOCS/
-`-- README.md
+## 3. Architecture du repo
+
+```text
+SECURE-SCAN-GROUPE-2/
+├── backend/                 # API REST - Symfony (PHP)
+│   ├── bin/                 # Exécutables Symfony
+│   ├── config/              # Configuration (Routes, Sécurité, Doctrine)
+│   ├── migrations/          # Fichiers de migration de la base de données (Supabase)
+│   ├── public/              # Point d'entrée web Backend
+│   ├── src/                 # Code métier (Controllers, Services d'analyse, Entités)
+│   └── tests/               # Tests unitaires et fonctionnels
+├── frontend/                # Interface Client
+│   ├── public/              # Assets statiques
+│   ├── src/                 # Base React/Vite (Expérimental / Composants)
+│   └── templates/           # Vues HTML natives (Interface principale)
+│       ├── css/             # Feuilles de style
+│       ├── js/              # Scripts Vanilla JS (Intégration API & Logique)
+│       └── *.html           # Fichiers vues (dashboard, login, rapports...)
+├── livrables/               # Documents de rendu pour le jury
+│
+└── README.md                # Point d'entrée et documentation globale
 ```
 
 ## 4. Prerequis
