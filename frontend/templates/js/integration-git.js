@@ -6,7 +6,7 @@ const API_BASE = '/api';
 const ENDPOINTS = {
   gitResult: API_BASE + '/analyse/{id}/git-result', // GET  → données du commit/branch créé
   push:      API_BASE + '/analyse/{id}/push',        // POST → push la PR vers le repo
-  pdf:       API_BASE + '/analyse/{id}/report',      // GET  → télécharger le rapport PDF
+  pdf:       API_BASE + '/report/{id}?format=pdf'      // GET  → télécharger le rapport PDF
 };
 
 // ============================================================

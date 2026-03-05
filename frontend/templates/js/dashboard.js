@@ -438,3 +438,39 @@ function showError(msg) {
   const tbody = document.getElementById('vuln-tbody');
   if (tbody) tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:20px;color:#ef4444;">Erreur : ${esc(msg)}</td></tr>`;
 }
+
+function bootstrapOAuthTokenFromUrl() {
+  const queryParams = new URLSearchParams(window.location.search);
+  const hashRaw = window.location.hash.startsWith('#') ? window.location.hash.slice(1) : '';
+  const hashParams = new URLSearchParams(hashRaw);
+
+  const tokenFromHash = (hashParams.get('token') || '').trim();
+  const tokenFromQuery = (queryParams.get('token') || '').trim();
+  const token = tokenFromHash || tokenFromQuery;
+
+  let changed = false;
+
+  if (token) {
+    // Cle utilisee partout dans api.js
+    saveToken(token);
+  }
+
+  if (tokenFromQuery) {
+    queryParams.delete('token');
+    changed = true;
+  }
+
+  if (tokenFromHash) {
+    hashParams.delete('token');
+    changed = true;
+  }
+
+  if (changed && window.history && window.history.replaceState) {
+    const query = queryParams.toString();
+    const hash = hashParams.toString();
+    const cleanUrl = window.location.pathname
+      + (query ? ('?' + query) : '')
+      + (hash ? ('#' + hash) : '');
+    window.history.replaceState({}, document.title, cleanUrl);
+  }
+}
