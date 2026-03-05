@@ -55,6 +55,19 @@ let searchVal    = '';
 let dateVal      = '';
 let statusVal    = '';
 
+function bindLogout() {
+  document.querySelectorAll('.sb-out').forEach(el => {
+    el.addEventListener('click', e => {
+      e.preventDefault();
+      if (typeof Auth !== 'undefined' && typeof Auth.logout === 'function') {
+        Auth.logout();
+        return;
+      }
+      window.location.href = 'login.html';
+    });
+  });
+}
+
 // ── Fetch ─────────────────────────────────────────────────────
 async function fetchHistory(page = 1) {
   const params = new URLSearchParams({
@@ -197,6 +210,11 @@ async function handleFilter() {
 
 // ── Init ──────────────────────────────────────────────────────
 async function init() {
+  if (typeof requireAuth === 'function' && !requireAuth()) return;
+  bindLogout();
+  if (typeof loadUserInfo === 'function') {
+    await loadUserInfo();
+  }
   const [stats, history] = await Promise.all([fetchStats(), fetchHistory(1)]);
   renderStats(stats);
   renderTable(history);
