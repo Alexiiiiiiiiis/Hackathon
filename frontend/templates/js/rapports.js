@@ -1,8 +1,7 @@
-// Données (en français comme sur le screen)
-const REPORTS = [
+﻿const REPORTS = [
   {
     id: 1,
-    name: "Sécurité Rapport-project-alpha",
+    name: "Securite Rapport-project-alpha",
     repo: "username/project-alpha",
     type: "rapport complet",
     typeColor: "cyan",
@@ -11,7 +10,7 @@ const REPORTS = [
   },
   {
     id: 2,
-    name: "Sécurité Rapport-webapp-beta",
+    name: "Securite Rapport-webapp-beta",
     repo: "username/webapp-beta",
     type: "rapport complet",
     typeColor: "cyan",
@@ -20,18 +19,18 @@ const REPORTS = [
   },
   {
     id: 3,
-    name: "Conformité OWASP - api-services",
+    name: "Conformite OWASP - api-services",
     repo: "username/api-service",
-    type: "conformité",
+    type: "conformite",
     typeColor: "purple",
     date: "12-02-2026",
     size: "3.2 MB",
   },
   {
     id: 4,
-    name: "Résumé exécutif-code-existant",
+    name: "Resume executif-code-existant",
     repo: "username/mobile-app",
-    type: "résumé exécutif",
+    type: "resume executif",
     typeColor: "green",
     date: "03-02-2026",
     size: "1.5 MB",
@@ -40,7 +39,6 @@ const REPORTS = [
 
 const elTable = document.getElementById("reportsTable");
 const elInfo = document.getElementById("tableInfo");
-
 const elFilterName = document.getElementById("filterName");
 const elFilterRepo = document.getElementById("filterRepo");
 const elFilterType = document.getElementById("filterType");
@@ -51,7 +49,18 @@ function pillClass(color) {
   return "pill cyan";
 }
 
+function escapeHtml(str) {
+  return String(str)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
 function renderTable(data) {
+  if (!elTable || !elInfo) return;
+
   elTable.innerHTML = "";
 
   data.forEach((r) => {
@@ -70,22 +79,23 @@ function renderTable(data) {
       <div class="tcenter"><button class="pdf" type="button">PDF</button></div>
     `;
 
-    // (Optionnel) clic PDF
-    row.querySelector(".pdf").addEventListener("click", () => {
-      alert(`Téléchargement: ${r.name}`);
-    });
+    const pdfBtn = row.querySelector(".pdf");
+    if (pdfBtn) {
+      pdfBtn.addEventListener("click", () => {
+        alert(`Telechargement: ${r.name}`);
+      });
+    }
 
     elTable.appendChild(row);
   });
 
-  // Info en bas (simple)
   elInfo.textContent = `Voir 1-${Math.min(3, data.length)} sur ${Math.max(24, data.length)} rapports`;
 }
 
 function applyFilters() {
-  const name = elFilterName.value.trim().toLowerCase();
-  const repo = elFilterRepo.value.trim().toLowerCase();
-  const type = elFilterType.value;
+  const name = (elFilterName?.value || "").trim().toLowerCase();
+  const repo = (elFilterRepo?.value || "").trim().toLowerCase();
+  const type = elFilterType?.value || "";
 
   const filtered = REPORTS.filter((r) => {
     const okName = !name || r.name.toLowerCase().includes(name);
@@ -97,35 +107,82 @@ function applyFilters() {
   renderTable(filtered);
 }
 
-function escapeHtml(str) {
-  return String(str)
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
+function bindLogout() {
+  document.querySelectorAll(".sb-out").forEach((el) => {
+    el.addEventListener("click", (e) => {
+      e.preventDefault();
+      if (typeof Auth !== "undefined" && typeof Auth.logout === "function") {
+        Auth.logout();
+        return;
+      }
+      window.location.href = "login.html";
+    });
+  });
 }
 
-// Builder: compteur de sections
+async function hydrateUserInfo() {
+  if (typeof loadUserInfo === "function") {
+    await loadUserInfo();
+  }
+
+  let user = typeof getUser === "function" ? getUser() : null;
+  if (!user && typeof Auth !== "undefined" && typeof Auth.me === "function") {
+    try {
+      user = await Auth.me();
+    } catch (_) {
+      user = null;
+    }
+  }
+  if (!user) return;
+
+  const email = user.email || "";
+  const pseudo = email.split("@")[0] || "utilisateur";
+  const initial = pseudo.charAt(0).toUpperCase() || "U";
+
+  const avatar = document.querySelector(".avatar");
+  if (avatar) avatar.textContent = initial;
+
+  const accountName = document.querySelector(".account-name");
+  if (accountName) accountName.textContent = pseudo;
+
+  const accountMail = document.querySelector(".account-mail");
+  if (accountMail) accountMail.textContent = email;
+
+  const topbarName = document.querySelector(".user-btn span:last-child");
+  if (topbarName) topbarName.textContent = pseudo;
+}
+
 const checks = Array.from(document.querySelectorAll(".section-check"));
 const elCount = document.getElementById("sectionsCount");
 
 function updateSelectedCount() {
+  if (!elCount) return;
   const n = checks.filter((c) => c.checked).length;
-  elCount.textContent = `${n} section${n > 1 ? "s" : ""} sélectionné${n > 1 ? "es" : ""}`;
+  elCount.textContent = `${n} section${n > 1 ? "s" : ""} selectionne${n > 1 ? "es" : ""}`;
 }
 
-checks.forEach((c) => c.addEventListener("change", updateSelectedCount));
+async function initPage() {
+  if (typeof requireAuth === "function" && !requireAuth()) return;
 
-elFilterName.addEventListener("input", applyFilters);
-elFilterRepo.addEventListener("input", applyFilters);
-elFilterType.addEventListener("change", applyFilters);
+  bindLogout();
+  await hydrateUserInfo();
 
-document.getElementById("genBtn").addEventListener("click", () => {
-  const n = checks.filter((c) => c.checked).length;
-  alert(`Rapport généré avec ${n} section${n > 1 ? "s" : ""}.`);
-});
+  if (elFilterName) elFilterName.addEventListener("input", applyFilters);
+  if (elFilterRepo) elFilterRepo.addEventListener("input", applyFilters);
+  if (elFilterType) elFilterType.addEventListener("change", applyFilters);
 
-// init
-renderTable(REPORTS);
-updateSelectedCount();
+  checks.forEach((c) => c.addEventListener("change", updateSelectedCount));
+
+  const genBtn = document.getElementById("genBtn");
+  if (genBtn) {
+    genBtn.addEventListener("click", () => {
+      const n = checks.filter((c) => c.checked).length;
+      alert(`Rapport genere avec ${n} section${n > 1 ? "s" : ""}.`);
+    });
+  }
+
+  renderTable(REPORTS);
+  updateSelectedCount();
+}
+
+initPage();
