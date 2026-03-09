@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # SecureScan
 
 Plateforme web d analyse de securite de code source.
@@ -290,6 +289,3 @@ php bin/console doctrine:schema:update --dump-sql
 - `frontend/README.md`: guide frontend cible
 
 Le present fichier reste la reference globale du projet.
-=======
-# Hackathon
->>>>>>> 4a5bce0ee55edcafdb7984b90f81b2ae832a1fc8
